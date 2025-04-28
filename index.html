@@ -1,9 +1,43 @@
-<!DOCTYPE html>
+// Modificación al código para Google Apps Script:
+
+/*
+// Función para actualizar disponibilidad de productos en Google Apps Script
+function updateProductAvailability(items) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Productos");
+  var dataRange = sheet.getDataRange();
+  var values = dataRange.getValues();
+  var updatedRows = 0;
+  
+  // Para cada item en el carrito
+  items.forEach(function(item) {
+    var productId = item.productId;
+    var flavorName = item.flavorName;
+    
+    // Buscar la fila correspondiente
+    for (var i = 1; i < values.length; i++) {
+      if (values[i][0] == productId && values[i][3] == flavorName) {
+        // Verificar disponibilidad
+        var isAvailable = values[i][5].toUpperCase() === 'Y';
+        if (isAvailable) {
+          // Actualizar disponibilidad a "N" (no disponible)
+          sheet.getRange(i + 1, 6).setValue('N');
+          updatedRows++;
+        } else {
+          throw new Error("Producto no disponible: " + values[i][1] + " - " + flavorName);
+        }
+        break;
+      }
+    }
+  });
+  
+  return "Disponibilidad actualizada para " + updatedRows + " productos";
+}
+*/<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pedidos De Mayoreo</title>
+    <title>Mi Tienda Online</title>
     <style>
         * {
             box-sizing: border-box;
@@ -242,7 +276,7 @@
 </head>
 <body>
     <header>
-        <h1>Pedidos De Mayoreo</h1>
+        <h1>Mi Tienda Online</h1>
     </header>
     
     <div class="container">
@@ -318,12 +352,12 @@
                 
                 // Datos de ejemplo para desarrollo
                 const mockData = [
-                    [1, "Producto 1", "Descripción del producto 1", "Sabor 1A", 100, 10, "producto1_sabor1"],
-                    [2, "Producto 1", "Descripción del producto 1", "Sabor 1B", 110, 5, "producto1_sabor2"],
-                    [3, "Producto 1", "Descripción del producto 1", "Sabor 1C", 120, 8, "producto1_sabor3"],
-                    [4, "Producto 2", "Descripción del producto 2", "Sabor 2A", 150, 15, "producto2_sabor1"],
-                    [5, "Producto 2", "Descripción del producto 2", "Sabor 2B", 160, 12, "producto2_sabor2"],
-                    [6, "Producto 2", "Descripción del producto 2", "Sabor 2C", 170, 7, "producto2_sabor3"]
+                    [1, "Producto 1", "Descripción del producto 1", "Sabor 1A", 100, "Y", "producto1_sabor1"],
+                    [2, "Producto 1", "Descripción del producto 1", "Sabor 1B", 110, "Y", "producto1_sabor2"],
+                    [3, "Producto 1", "Descripción del producto 1", "Sabor 1C", 120, "N", "producto1_sabor3"],
+                    [4, "Producto 2", "Descripción del producto 2", "Sabor 2A", 150, "Y", "producto2_sabor1"],
+                    [5, "Producto 2", "Descripción del producto 2", "Sabor 2B", 160, "Y", "producto2_sabor2"],
+                    [6, "Producto 2", "Descripción del producto 2", "Sabor 2C", 170, "N", "producto2_sabor3"]
                 ];
                 
                 // Usar los datos (ya sea de la API o los de ejemplo)
@@ -340,7 +374,7 @@
                         const description = row[2];
                         const flavor = row[3];
                         const price = parseFloat(row[4]);
-                        const stock = parseInt(row[5]);
+                        const available = row[5].toUpperCase() === 'Y'; // Convertir 'Y'/'N' a booleano
                         const imageKey = row[6];
                         
                         // Si el producto no existe en el mapa, crearlo
@@ -358,7 +392,7 @@
                         productsMap[productName].flavors.push({
                             id: id, // Guardamos el ID original de la fila
                             name: flavor,
-                            stock: stock,
+                            available: available,
                             price: price,
                             imageKey: imageKey
                         });
@@ -390,7 +424,7 @@
                 // Construye el selector de sabores
                 let flavorOptions = '';
                 product.flavors.forEach((flavor, index) => {
-                    flavorOptions += `<option value="${index}" ${flavor.stock <= 0 ? 'disabled' : ''}>${flavor.name} - $${flavor.price.toFixed(2)} ${flavor.stock <= 0 ? '(Agotado)' : ''}</option>`;
+                    flavorOptions += `<option value="${index}" ${!flavor.available ? 'disabled' : ''}>${flavor.name} - ${flavor.price.toFixed(2)} ${!flavor.available ? '(Agotado)' : ''}</option>`;
                 });
                 
                 productCard.innerHTML = `
@@ -403,8 +437,8 @@
                         <select class="flavor-select" data-product-id="${product.id}">
                             ${flavorOptions}
                         </select>
-                        <p class="price">$${product.flavors[0].price.toFixed(2)}</p>
-                        <p class="stock">Disponibles: ${product.flavors[0].stock}</p>
+                        <p class="price">${product.flavors[0].price.toFixed(2)}</p>
+                        <p class="stock">${product.flavors[0].available ? 'Disponible' : 'Agotado'}</p>
                         <button class="add-to-cart" data-product-id="${product.id}">Añadir al Carrito</button>
                     </div>
                 `;
@@ -420,8 +454,8 @@
                     const flavor = product.flavors[flavorIndex];
                     
                     // Actualizar precio y stock
-                    productCard.querySelector('.price').textContent = `$${flavor.price.toFixed(2)}`;
-                    productCard.querySelector('.stock').textContent = `Disponibles: ${flavor.stock}`;
+                    productCard.querySelector('.price').textContent = `${flavor.price.toFixed(2)}`;
+                    productCard.querySelector('.stock').textContent = flavor.available ? 'Disponible' : 'Agotado';
                     
                     // Actualizar imagen según el imageKey del sabor
                     const imageUrl = imgUrls[flavor.imageKey] || '/api/placeholder/300/300';
@@ -448,19 +482,20 @@
         
         // Función para añadir productos al carrito
         function addToCart(product, flavor, flavorIndex) {
+            // Verificar si el sabor está disponible
+            if (!flavor.available) {
+                alert('Lo sentimos, este sabor está agotado');
+                return;
+            }
+            
             // Verificar si ya existe este producto+sabor en el carrito
             const existingItemIndex = cart.findIndex(item => 
                 item.productId === product.id && item.flavorName === flavor.name
             );
             
             if (existingItemIndex >= 0) {
-                // Si ya existe, incrementar la cantidad si hay stock suficiente
-                if (cart[existingItemIndex].quantity < flavor.stock) {
-                    cart[existingItemIndex].quantity++;
-                } else {
-                    alert('No hay más unidades disponibles de este sabor');
-                    return;
-                }
+                // Si ya existe, incrementar la cantidad
+                cart[existingItemIndex].quantity++;
             } else {
                 // Si no existe, añadir nuevo item al carrito
                 cart.push({
@@ -600,11 +635,11 @@
                 // Simulación de actualización de stock (para desarrollo)
                 console.log("Simulando actualización de stock con estos items:", orderItems);
                 
-                // Actualizar stock local (simulado)
+                // Actualizar disponibilidad local (simulado)
                 cart.forEach(item => {
                     const product = products.find(p => p.id === item.productId);
                     const flavor = product.flavors.find(f => f.name === item.flavorName);
-                    flavor.stock -= item.quantity;
+                    flavor.available = false; // Marcar como no disponible después de la compra
                 });
                 
                 // Enviar WhatsApp con detalles del pedido
