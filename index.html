@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pedidos de Mayoreo Online</title>
+    <title>Mi Tienda Online</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -104,28 +104,40 @@
             overflow: hidden;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            cursor: default;
         }
         
         .product-card:hover {
             transform: translateY(-5px);
         }
         
+        .product-image-container {
+            position: relative;
+            overflow: hidden;
+        }
+        
         .product-image {
             width: 100%;
             height: 300px;
             object-fit: cover;
-            aspect-ratio: 1 / 1; /* Hace que la imagen sea cuadrada */
+            aspect-ratio: 1 / 1;
         }
-
-/* Asegura que el contenedor tenga las dimensiones correctas */
-        .product-card {
-            background-color: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
+        
+        .product-unavailable {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            color: white;
             display: flex;
-            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.2rem;
         }
         
         .product-info {
@@ -151,27 +163,118 @@
             margin-bottom: 1rem;
         }
         
-        .product-flavor {
+        /* Flavor Modal Styles */
+        .flavor-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            padding: 0.75rem;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .flavor-modal {
+            background-color: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        
+        .flavor-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--secondary);
+        }
+        
+        .flavor-modal-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .close-flavor-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--dark);
+        }
+        
+        .flavor-options {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .flavor-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+        }
+        
+        .flavor-name {
+            font-weight: 500;
+        }
+        
+        .flavor-price {
+            color: var(--primary);
+            font-weight: bold;
+        }
+        
+        .flavor-unavailable {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        
+        .flavor-quantity {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .quantity-control {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 1px solid var(--secondary);
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+        
+        .quantity-control:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .quantity-input {
+            width: 40px;
+            height: 28px;
+            text-align: center;
             border: 1px solid var(--secondary);
             border-radius: 4px;
-            background-color: white;
-            appearance: auto;
-            cursor: pointer;
         }
         
-        .product-flavor option {
-            padding: 0.5rem;
-        }
-        
-        .product-flavor option:disabled {
-            color: #aaa;
-            font-style: italic;
-        }
-        
-        .add-to-cart {
+        .add-flavors-to-cart {
             width: 100%;
             padding: 0.75rem;
             background-color: var(--primary);
@@ -179,14 +282,16 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            font-weight: bold;
+            margin-top: 1rem;
             transition: background-color 0.3s ease;
         }
         
-        .add-to-cart:hover {
+        .add-flavors-to-cart:hover {
             background-color: #2c5282;
         }
         
-        .add-to-cart:disabled {
+        .add-flavors-to-cart:disabled {
             background-color: var(--secondary);
             cursor: not-allowed;
         }
@@ -530,7 +635,7 @@
 <body>
     <header>
         <nav class="navbar">
-            <div class="logo">Pedidos de Mayoreo Online</div>
+            <div class="logo">Mi Tienda</div>
             <div class="cart-icon" id="cart-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="9" cy="21" r="1"></circle>
@@ -624,11 +729,25 @@
         <div class="spinner"></div>
     </div>
     
+    <!-- Modal de Sabores -->
+    <div class="flavor-modal-overlay" id="flavor-modal-overlay">
+        <div class="flavor-modal">
+            <div class="flavor-modal-header">
+                <div class="flavor-modal-title" id="flavor-modal-title">Seleccionar Sabores</div>
+                <button class="close-flavor-modal" id="close-flavor-modal">×</button>
+            </div>
+            <div class="flavor-options" id="flavor-options">
+                <!-- Las opciones de sabores se cargarán aquí dinámicamente -->
+            </div>
+            <button class="add-flavors-to-cart" id="add-flavors-to-cart">Agregar al Carrito</button>
+        </div>
+    </div>
+    
     <script>
         // Variable para almacenar los productos cargados desde Google Sheets
         let productos = [];
         
-        // URL de la hoja publicada como CSV - Ya configurada con tu URL
+        // URL de la hoja publicada como CSV - Reemplaza con tu URL
         const GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTSfNRclhMLcT7SyOOppUPbPQtSLnZTrGlHt-kTCdKUoGVgiUODTs4SQHpmcx_bKfvDc3RcsTu28JTP/pub?output=csv';
         
         // Carrito de compras
@@ -655,6 +774,12 @@
         const successBtn = document.getElementById('success-btn');
         const loader = document.getElementById('loader');
         const refreshBtn = document.getElementById('refresh-btn');
+        const flavorModalOverlay = document.getElementById('flavor-modal-overlay');
+        const closeFlavorModal = document.getElementById('close-flavor-modal');
+        const addFlavorsToCart = document.getElementById('add-flavors-to-cart');
+        
+        // Variable para almacenar el producto actualmente seleccionado
+        let productoActual = null;
         
         // Encriptar precio para protegerlo contra manipulaciones (implementación básica)
         function protegerPrecio(precio, id) {
@@ -782,6 +907,8 @@
                     });
                     
                     // Solo agregar productos con datos mínimos
+                    if
+                    // Solo agregar productos con datos mínimos
                     if (product.nombre && (product.sabor || product.id)) {
                         productosRaw.push(product);
                     } else {
@@ -874,7 +1001,7 @@
                 
                 if (char === '"') {
                     inQuotes = !inQuotes;
-                    } else if (char === ',' && !inQuotes) {
+                } else if (char === ',' && !inQuotes) {
                     result.push(current);
                     current = '';
                 } else {
@@ -886,7 +1013,7 @@
             return result;
         }
         
-        // Cargar productos - Versión mejorada para debugging
+        // Función modificada para cargar productos sin dropdown
         function cargarProductos() {
             productosContainer.innerHTML = '';
             
@@ -911,95 +1038,213 @@
                 const variacionesDisponibles = producto.variaciones.filter(variacion => variacion.disponible);
                 const hayDisponibles = variacionesDisponibles.length > 0;
                 
-                console.log(`Producto ${producto.nombre}: ${variacionesDisponibles.length} variaciones disponibles`);
-                
                 // Procesar URL de imagen desde Google Photos
                 let imagenUrl = 'https://via.placeholder.com/300x300';
-
+                
                 if (producto.imagen && producto.imagen.trim() !== '') {
                     // Si es una URL de Google Photos, asegurarse de que sea una URL directa a la imagen
                     if (producto.imagen.includes('photos.google.com') || producto.imagen.includes('photos.app.goo.gl')) {
-                        // Pedir imágenes cuadradas para mejor apariencia
                         if (!producto.imagen.includes('=w')) {
-                            imagenUrl = producto.imagen + '=w600-h600'; // Solicitamos 600x600 para pantallas de alta resolución
+                            imagenUrl = producto.imagen + '=w600-h600';
                         } else {
                             imagenUrl = producto.imagen;
                         }
                     } else {
-                        // Si no es de Google Photos, usar la URL tal cual
                         imagenUrl = producto.imagen;
                     }
                 }
                 
-                // Construir HTML para el dropdown con console.log para debugging
-                const opcionesHTML = producto.variaciones.map((variacion, index) => {
-                    // Verificar si la variación es válida
-                    if (!variacion.nombre || variacion.nombre.trim() === '') {
-                        console.warn(`Variación sin nombre en producto ${producto.nombre}. Saltando.`);
-                        return '';
-                    }
-                    
-                    const precioFormateado = variacion.precio.toFixed(2);
-                    return `
-                        <option value="${index}" ${!variacion.disponible ? 'disabled' : ''}>
-                            ${variacion.nombre} - $${precioFormateado} ${!variacion.disponible ? '(No disponible)' : ''}
-                        </option>
-                    `;
-                }).join('');
-                
-                // Construir HTML completo del producto
+                // Construir HTML del producto - Ahora sin dropdown
                 productCard.innerHTML = `
-                    <img src="${imagenUrl}" alt="${producto.nombre}" class="product-image">
+                    <div class="product-image-container" data-product-index="${productoIndex}">
+                        <img src="${imagenUrl}" alt="${producto.nombre}" class="product-image">
+                        ${!hayDisponibles ? '<div class="product-unavailable">No Disponible</div>' : ''}
+                    </div>
                     <div class="product-info">
                         <h3 class="product-title">${producto.nombre}</h3>
                         <p class="product-description">${producto.descripcion || ''}</p>
-                        <select class="product-flavor" id="product-flavor-${productoIndex}" ${!hayDisponibles ? 'disabled' : ''}>
-                            <option value="">Selecciona un sabor</option>
-                            ${opcionesHTML}
-                        </select>
-                        <button class="add-to-cart" id="add-to-cart-${productoIndex}" data-id="${producto.id}" ${!hayDisponibles ? 'disabled' : ''}>
-                            ${hayDisponibles ? 'Agregar al Carrito' : 'No Disponible'}
-                        </button>
                     </div>
                 `;
                 
                 productosContainer.appendChild(productCard);
                 
-                // Agregar event listeners después de que el elemento está en el DOM
-                const addToCartBtn = document.getElementById(`add-to-cart-${productoIndex}`);
-                const flavorSelect = document.getElementById(`product-flavor-${productoIndex}`);
-                
-                if (addToCartBtn && flavorSelect) {
-                    console.log(`Configurando eventos para producto ${productoIndex}: ${producto.nombre}`);
+                // Si hay sabores disponibles, agregar evento de clic a la imagen
+                if (hayDisponibles) {
+                    const imageContainer = productCard.querySelector('.product-image-container');
+                    imageContainer.style.cursor = 'pointer';
                     
-                    // Verificar que el select funcione correctamente
-                    console.log(`Select para ${producto.nombre}:`, flavorSelect);
-                    console.log(`Opciones en el select: ${flavorSelect.options.length}`);
-                    
-                    addToCartBtn.addEventListener('click', () => {
-                        const variacionIndex = flavorSelect.value;
-                        
-                        console.log(`Click en Agregar al Carrito para ${producto.nombre}`);
-                        console.log(`Valor seleccionado: "${variacionIndex}"`);
-                        
-                        if (!variacionIndex) {
-                            alert('Por favor selecciona un sabor');
-                            return;
-                        }
-                        
-                        const variacionSeleccionada = producto.variaciones[variacionIndex];
-                        console.log(`Variación seleccionada:`, variacionSeleccionada);
-                        
-                        // Almacenar el precio original protegido antes de agregar al carrito
-                        const precioOriginal = variacionSeleccionada.precio;
-                        const precioProt = variacionSeleccionada.precioProt;
-                        
-                        agregarAlCarrito(producto, variacionSeleccionada);
+                    imageContainer.addEventListener('click', () => {
+                        // Abrir modal de selección de sabores
+                        abrirModalSabores(producto);
                     });
-                } else {
-                    console.error(`No se encontraron los elementos para producto ${productoIndex}`);
                 }
             });
+        }
+        
+        // Función para abrir el modal de selección de sabores
+        function abrirModalSabores(producto) {
+            // Guardar referencia al producto actual
+            productoActual = producto;
+            
+            // Actualizar título del modal
+            document.getElementById('flavor-modal-title').textContent = `Sabores de ${producto.nombre}`;
+            
+            // Limpiar opciones anteriores
+            const flavorOptions = document.getElementById('flavor-options');
+            flavorOptions.innerHTML = '';
+            
+            // Agregar cada sabor como una opción con control de cantidad
+            producto.variaciones.forEach((variacion, index) => {
+                const flavorOption = document.createElement('div');
+                flavorOption.className = `flavor-option ${!variacion.disponible ? 'flavor-unavailable' : ''}`;
+                flavorOption.dataset.index = index;
+                
+                flavorOption.innerHTML = `
+                    <div>
+                        <div class="flavor-name">${variacion.nombre}</div>
+                        <div class="flavor-price">$${variacion.precio.toFixed(2)}</div>
+                    </div>
+                    <div class="flavor-quantity">
+                        <button class="quantity-control decrease" ${!variacion.disponible ? 'disabled' : ''}>-</button>
+                        <input type="number" class="quantity-input" value="0" min="0" max="99" ${!variacion.disponible ? 'disabled' : ''}>
+                        <button class="quantity-control increase" ${!variacion.disponible ? 'disabled' : ''}>+</button>
+                    </div>
+                `;
+                
+                flavorOptions.appendChild(flavorOption);
+                
+                // Agregar eventos a los controles de cantidad
+                if (variacion.disponible) {
+                    const decreaseBtn = flavorOption.querySelector('.decrease');
+                    const increaseBtn = flavorOption.querySelector('.increase');
+                    const quantityInput = flavorOption.querySelector('.quantity-input');
+                    
+                    decreaseBtn.addEventListener('click', () => {
+                        let currentValue = parseInt(quantityInput.value);
+                        if (currentValue > 0) {
+                            quantityInput.value = currentValue - 1;
+                            actualizarBotonAgregarAlCarrito();
+                        }
+                    });
+                    
+                    increaseBtn.addEventListener('click', () => {
+                        let currentValue = parseInt(quantityInput.value);
+                        if (currentValue < 99) {
+                            quantityInput.value = currentValue + 1;
+                            actualizarBotonAgregarAlCarrito();
+                        }
+                    });
+                    
+                    quantityInput.addEventListener('change', () => {
+                        let currentValue = parseInt(quantityInput.value);
+                        if (isNaN(currentValue) || currentValue < 0) {
+                            quantityInput.value = 0;
+                        } else if (currentValue > 99) {
+                            quantityInput.value = 99;
+                        }
+                        actualizarBotonAgregarAlCarrito();
+                    });
+                }
+            });
+            
+            // Mostrar el modal
+            flavorModalOverlay.style.display = 'flex';
+            
+            // Actualizar estado del botón de agregar al carrito
+            actualizarBotonAgregarAlCarrito();
+        }
+        
+        // Función para actualizar el estado del botón "Agregar al Carrito" en el modal
+        function actualizarBotonAgregarAlCarrito() {
+            const addFlavorsBtn = document.getElementById('add-flavors-to-cart');
+            const quantityInputs = document.querySelectorAll('#flavor-options .quantity-input');
+            
+            // Verificar si hay al menos un sabor con cantidad mayor a cero
+            let totalCantidad = 0;
+            quantityInputs.forEach(input => {
+                totalCantidad += parseInt(input.value) || 0;
+            });
+            
+            addFlavorsBtn.disabled = totalCantidad === 0;
+        }
+        
+        // Función para agregar los sabores seleccionados al carrito
+        function agregarSaboresAlCarrito() {
+            if (!productoActual) return;
+            
+            const flavorOptions = document.querySelectorAll('#flavor-options .flavor-option');
+            
+            // Verificar si hay al menos un sabor seleccionado
+            let haySeleccionados = false;
+            
+            flavorOptions.forEach(option => {
+                const index = parseInt(option.dataset.index);
+                const variacion = productoActual.variaciones[index];
+                const cantidad = parseInt(option.querySelector('.quantity-input').value) || 0;
+                
+                if (cantidad > 0 && variacion.disponible) {
+                    haySeleccionados = true;
+                    
+                    // Verificar integridad del precio
+                    if (!verificarIntegridadProducto(productoActual, variacion)) {
+                        alert('Error al procesar el producto. Por favor, intenta de nuevo más tarde.');
+                        return;
+                    }
+                    
+                    // Verificar si el producto ya está en el carrito con la misma variación
+                    const itemExistente = carrito.find(item => 
+                        item.id === productoActual.id && item.variacion.nombre === variacion.nombre
+                    );
+                    
+                    if (itemExistente) {
+                        itemExistente.cantidad += cantidad;
+                    } else {
+                        carrito.push({
+                            id: productoActual.id,
+                            nombre: productoActual.nombre,
+                            variacion: variacion,
+                            precio: variacion.precio,
+                            cantidad: cantidad
+                        });
+                    }
+                }
+            });
+            
+            if (haySeleccionados) {
+                // Actualizar el carrito
+                actualizarCarrito();
+                
+                // Cerrar el modal
+                cerrarModalSabores();
+                
+                // Mostrar confirmación
+                const toast = document.createElement('div');
+                toast.style.position = 'fixed';
+                toast.style.bottom = '20px';
+                toast.style.right = '20px';
+                toast.style.backgroundColor = 'var(--primary)';
+                toast.style.color = 'white';
+                toast.style.padding = '1rem';
+                toast.style.borderRadius = '4px';
+                toast.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+                toast.style.zIndex = '9999';
+                toast.style.animation = 'fadeInOut 3s ease';
+                toast.textContent = `${productoActual.nombre} agregado al carrito`;
+                
+                document.body.appendChild(toast);
+                
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 3000);
+            } else {
+                alert('Por favor selecciona al menos un sabor para agregar al carrito.');
+            }
+        }
+        
+        // Función para cerrar el modal de sabores
+        function cerrarModalSabores() {
+            flavorModalOverlay.style.display = 'none';
+            productoActual = null;
         }
         
         // Verificar integridad de los datos y prevenir manipulaciones
@@ -1017,66 +1262,6 @@
             }
             
             return true;
-        }
-        
-        // Agregar producto al carrito con verificación de seguridad
-        function agregarAlCarrito(producto, variacion) {
-            // Verificar integridad del producto y precio antes de proceder
-            if (!verificarIntegridadProducto(producto, variacion)) {
-                alert('Error al procesar el producto. Por favor, intenta de nuevo más tarde.');
-                return;
-            }
-            
-            // Verificar si el producto ya está en el carrito con la misma variación
-            const itemExistente = carrito.find(item => 
-                item.id === producto.id && item.variacion.nombre === variacion.nombre
-            );
-            
-            if (itemExistente) {
-                itemExistente.cantidad++;
-            } else {
-                carrito.push({
-                    id: producto.id,
-                    nombre: producto.nombre,
-                    variacion: variacion,
-                    precio: variacion.precio,
-                    cantidad: 1
-                });
-            }
-            
-            actualizarCarrito();
-            
-            // Mostrar confirmación
-            const toast = document.createElement('div');
-            toast.style.position = 'fixed';
-            toast.style.bottom = '20px';
-            toast.style.right = '20px';
-            toast.style.backgroundColor = 'var(--primary)';
-            toast.style.color = 'white';
-            toast.style.padding = '1rem';
-            toast.style.borderRadius = '4px';
-            toast.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
-            toast.style.zIndex = '9999';
-            toast.style.animation = 'fadeInOut 3s ease';
-            toast.textContent = `${producto.nombre} (${variacion.nombre}) agregado al carrito`;
-            
-            document.body.appendChild(toast);
-            
-            setTimeout(() => {
-                document.body.removeChild(toast);
-            }, 3000);
-            
-            // Agregar animación
-            document.head.insertAdjacentHTML('beforeend', `
-                <style>
-                    @keyframes fadeInOut {
-                        0% { opacity: 0; transform: translateY(20px); }
-                        10% { opacity: 1; transform: translateY(0); }
-                        90% { opacity: 1; transform: translateY(0); }
-                        100% { opacity: 0; transform: translateY(20px); }
-                    }
-                </style>
-            `);
         }
         
         // Actualizar cantidad de un item del carrito
@@ -1327,12 +1512,12 @@
             
             // Simular envío (aquí iría el código para enviar a WhatsApp)
             setTimeout(() => {
-                // Preparar mensaje de WhatsApp con formato modificado
+                // Preparar mensaje de WhatsApp con formato mejorado y simplificado
                 let mensaje = `*Nuevo Pedido*%0A%0A`;
                 mensaje += `*Cliente:* ${nombre}%0A`;
                 mensaje += `*Teléfono:* ${telefono}%0A%0A`;
                 mensaje += `*Productos:*%0A`;
-
+                
                 // Agrupar productos por nombre
                 const productosAgrupados = {};
                 carrito.forEach(item => {
@@ -1341,36 +1526,36 @@
                     }
                     productosAgrupados[item.nombre].push(item);
                 });
-
+                
                 // Variable para contar el total de piezas
                 let totalPiezas = 0;
-
+                
                 // Generar mensaje agrupado sin precios, solo cantidades
                 Object.keys(productosAgrupados).forEach(nombreProducto => {
                     // Añadir nombre del producto
                     mensaje += `*${nombreProducto}*%0A`;
-    
+                    
                     // Calcular total de piezas por producto
                     let piezasProducto = 0;
-    
+                    
                     // Añadir cada sabor
                     productosAgrupados[nombreProducto].forEach(item => {
                         mensaje += `   - ${item.variacion.nombre} x${item.cantidad}%0A`;
                         piezasProducto += item.cantidad;
                         totalPiezas += item.cantidad;
                     });
-    
+                    
                     // Añadir total de piezas del producto
                     mensaje += `   Total piezas ${nombreProducto}: ${piezasProducto}%0A%0A`;
                 });
-
+                
                 // Añadir total de piezas general
                 mensaje += `*Total piezas pedido:* ${totalPiezas}%0A%0A`;
-
+                
                 // Añadir sección para copiar y pegar
                 mensaje += `*Resumen para inventario:*%0A`;
                 mensaje += `Producto%09Total piezas%0A`; // %09 es el código para tabulación
-
+                
                 // Añadir cada producto con su total de piezas separado por tabulador
                 Object.keys(productosAgrupados).forEach(nombreProducto => {
                     let piezasProducto = 0;
@@ -1379,12 +1564,9 @@
                     });
                     mensaje += `${nombreProducto}%09${piezasProducto}%0A`;
                 });
-//const total = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
-//mensaje += `*Total del pedido:* $${total.toFixed(2)}`;
                 
                 // Número de WhatsApp del vendedor (reemplazar con el número real)
                 const numeroWhatsapp = '+526391239619'; // Reemplaza con tu número real
-                //const numeroWhatsapp = '+526391239619'; // Reemplaza con tu número real
                 
                 // Crear URL de WhatsApp
                 const whatsappUrl = `https://wa.me/${numeroWhatsapp}?text=${mensaje}`;
@@ -1423,6 +1605,19 @@
                 }, 500);
             });
         });
+        
+        // Evento para cerrar el modal de sabores con el botón X
+        closeFlavorModal.addEventListener('click', cerrarModalSabores);
+        
+        // Evento para cerrar el modal de sabores al hacer clic fuera
+        flavorModalOverlay.addEventListener('click', (e) => {
+            if (e.target === flavorModalOverlay) {
+                cerrarModalSabores();
+            }
+        });
+        
+        // Evento para agregar sabores al carrito
+        addFlavorsToCart.addEventListener('click', agregarSaboresAlCarrito);
         
         // Configuración de actualización automática
         const TIEMPO_ACTUALIZACION = 5 * 60 * 1000; // 5 minutos en milisegundos
@@ -1463,6 +1658,17 @@
                 };
             }
             
+            // Agregar animación de fadeInOut para toast
+            const style = document.createElement('style');
+            style.textContent = `@keyframes fadeInOut {
+                    0% { opacity: 0; transform: translateY(20px); }
+                    10% { opacity: 1; transform: translateY(0); }
+                    90% { opacity: 1; transform: translateY(0); }
+                    100% { opacity: 0; transform: translateY(20px); }
+                }
+            `;
+            document.head.appendChild(style);
+            
             // Iniciar actualización automática
             iniciarActualizacionAutomatica();
             
@@ -1470,4 +1676,4 @@
         });
     </script>
 </body>
-</html>
+</html>    
