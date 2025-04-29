@@ -1327,7 +1327,7 @@
             
             // Simular envío (aquí iría el código para enviar a WhatsApp)
             setTimeout(() => {
-                // Preparar mensaje de WhatsApp con formato mejorado
+                // Preparar mensaje de WhatsApp con formato mejorado y simplificado
                 let mensaje = `*Nuevo Pedido*%0A%0A`;
                 mensaje += `*Cliente:* ${nombre}%0A`;
                 mensaje += `*Teléfono:* ${telefono}%0A%0A`;
@@ -1342,15 +1342,15 @@
                     productosAgrupados[item.nombre].push(item);
                 });
 
-                // Generar mensaje agrupado
+                // Generar mensaje agrupado y simplificado
                 Object.keys(productosAgrupados).forEach(nombreProducto => {
                     // Añadir nombre del producto
                     mensaje += `*${nombreProducto}*%0A`;
     
-                    // Añadir cada sabor como una sublista
+                    // Añadir cada sabor de forma simplificada
                     productosAgrupados[nombreProducto].forEach(item => {
                         const precioTotal = (item.precio * item.cantidad).toFixed(2);
-                        mensaje += `   - Sabor: ${item.variacion.nombre} | Cantidad: ${item.cantidad} | $${precioTotal}%0A`;
+                        mensaje += `   - ${item.variacion.nombre} x${item.cantidad} $${precioTotal}%0A`;
                     });
     
                     // Añadir línea en blanco entre productos
@@ -1359,7 +1359,6 @@
 
                 const total = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
                 mensaje += `*Total:* $${total.toFixed(2)}`;
-
                 
                 // Número de WhatsApp del vendedor (reemplazar con el número real)
                 const numeroWhatsapp = '+526391239619'; // Reemplaza con tu número real
