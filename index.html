@@ -1327,39 +1327,58 @@
             
             // Simular envío (aquí iría el código para enviar a WhatsApp)
             setTimeout(() => {
-                // Preparar mensaje de WhatsApp con formato mejorado y simplificado
+                // Preparar mensaje de WhatsApp con formato modificado
                 let mensaje = `*Nuevo Pedido*%0A%0A`;
                 mensaje += `*Cliente:* ${nombre}%0A`;
                 mensaje += `*Teléfono:* ${telefono}%0A%0A`;
                 mensaje += `*Productos:*%0A`;
 
-// Agrupar productos por nombre
-const productosAgrupados = {};
-carrito.forEach(item => {
-    if (!productosAgrupados[item.nombre]) {
-        productosAgrupados[item.nombre] = [];
-    }
-    productosAgrupados[item.nombre].push(item);
-});
+                // Agrupar productos por nombre
+                const productosAgrupados = {};
+                carrito.forEach(item => {
+                    if (!productosAgrupados[item.nombre]) {
+                        productosAgrupados[item.nombre] = [];
+                    }
+                    productosAgrupados[item.nombre].push(item);
+                });
 
-// Generar mensaje agrupado y simplificado
-Object.keys(productosAgrupados).forEach(nombreProducto => {
-    // Añadir nombre del producto
-    mensaje += `*${nombreProducto}*%0A`;
-    
-    // Calcular total por producto
-    let totalProducto = 0;
-    
-    // Añadir cada sabor sin el subtotal
-    productosAgrupados[nombreProducto].forEach(item => {
-        mensaje += `   - ${item.variacion.nombre} x${item.cantidad}%0A`;
-        totalProducto += item.precio * item.cantidad;
-    });
-    
-    // Añadir total del producto
-    mensaje += `   Total ${nombreProducto}: $${totalProducto.toFixed(2)}%0A%0A`;
-});
+                // Variable para contar el total de piezas
+                let totalPiezas = 0;
 
+                // Generar mensaje agrupado sin precios, solo cantidades
+                Object.keys(productosAgrupados).forEach(nombreProducto => {
+                    // Añadir nombre del producto
+                    mensaje += `*${nombreProducto}*%0A`;
+    
+                    // Calcular total de piezas por producto
+                    let piezasProducto = 0;
+    
+                    // Añadir cada sabor
+                    productosAgrupados[nombreProducto].forEach(item => {
+                        mensaje += `   - ${item.variacion.nombre} x${item.cantidad}%0A`;
+                        piezasProducto += item.cantidad;
+                        totalPiezas += item.cantidad;
+                    });
+    
+                    // Añadir total de piezas del producto
+                    mensaje += `   Total piezas ${nombreProducto}: ${piezasProducto}%0A%0A`;
+                });
+
+                // Añadir total de piezas general
+                mensaje += `*Total piezas pedido:* ${totalPiezas}%0A%0A`;
+
+                // Añadir sección para copiar y pegar
+                mensaje += `*Resumen para inventario:*%0A`;
+                mensaje += `Producto%09Total piezas%0A`; // %09 es el código para tabulación
+
+                // Añadir cada producto con su total de piezas separado por tabulador
+                Object.keys(productosAgrupados).forEach(nombreProducto => {
+                    let piezasProducto = 0;
+                    productosAgrupados[nombreProducto].forEach(item => {
+                        piezasProducto += item.cantidad;
+                    });
+                    mensaje += `${nombreProducto}%09${piezasProducto}%0A`;
+                });
 const total = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
 mensaje += `*Total del pedido:* $${total.toFixed(2)}`;
                 
