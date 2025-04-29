@@ -112,8 +112,20 @@
         
         .product-image {
             width: 100%;
-            height: 200px;
+            height: 300px;
             object-fit: cover;
+            aspect-ratio: 1 / 1; /* Hace que la imagen sea cuadrada */
+        }
+
+/* Asegura que el contenedor tenga las dimensiones correctas */
+        .product-card {
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
         }
         
         .product-info {
@@ -902,14 +914,14 @@
                 console.log(`Producto ${producto.nombre}: ${variacionesDisponibles.length} variaciones disponibles`);
                 
                 // Procesar URL de imagen desde Google Photos
-                let imagenUrl = 'https://via.placeholder.com/300';
-                
+                let imagenUrl = 'https://via.placeholder.com/300x300';
+
                 if (producto.imagen && producto.imagen.trim() !== '') {
                     // Si es una URL de Google Photos, asegurarse de que sea una URL directa a la imagen
                     if (producto.imagen.includes('photos.google.com') || producto.imagen.includes('photos.app.goo.gl')) {
-                        // Algunas URLs de Google Photos necesitan parámetros especiales para mostrar la imagen directamente
+                        // Pedir imágenes cuadradas para mejor apariencia
                         if (!producto.imagen.includes('=w')) {
-                            imagenUrl = producto.imagen + '=w800-h600';
+                            imagenUrl = producto.imagen + '=w600-h600'; // Solicitamos 600x600 para pantallas de alta resolución
                         } else {
                             imagenUrl = producto.imagen;
                         }
