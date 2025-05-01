@@ -1401,7 +1401,7 @@
             
             // Actualizar total
             const total = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
-            cartTotal.textContent = `Total: $${total.toFixed(2)}`;
+            cartTotal.textContent = `Total (el total mostrado es aproximado, el final se te enviara por whatsapp): $${total.toFixed(2)}`;
         }
         
         // Actualizar resumen de checkout
