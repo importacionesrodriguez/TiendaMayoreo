@@ -1317,7 +1317,12 @@ producto.variaciones.forEach((variacion, index) => {
                         carrito.push({
                             id: productoActual.id,
                             nombre: productoActual.nombre,
-                            variacion: variacion,
+                            variacion: {
+                                nombre: variacion.nombre,
+                                precio: variacion.precio,
+                                liquidacion: variacion.liquidacion, // Asegurarse de incluir esta propiedad
+                                disponible: variacion.disponible
+                            },
                             precio: variacion.precio,
                             cantidad: cantidad
                         });
