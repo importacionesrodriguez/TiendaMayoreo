@@ -1147,13 +1147,20 @@
                 flavorOption.className = `flavor-option ${!variacion.disponible ? 'flavor-unavailable' : ''}`;
                 flavorOption.dataset.index = index;
                 
-                // Determinar si el precio debe mostrarse en rojo (liquidación)
-                const precioClass = variacion.liquidacion ? 'sale-price' : 'flavor-price';
+                // Determinar cómo mostrar el precio según si está en liquidación o no
+                let precioHTML = '';
+                if (variacion.liquidacion) {
+                    // Para productos en liquidación: precio en rojo, negrita y con la leyenda "Super Sale!"
+                    precioHTML = `<div class="sale-price" style="font-weight: bold;">$${variacion.precio.toFixed(2)} <span style="background-color: var(--sale); color: white; padding: 2px 5px; border-radius: 3px; font-size: 0.8rem; margin-left: 5px;">¡Super Sale!</span></div>`;
+                } else {
+                    // Para productos normales: precio normal
+                    precioHTML = `<div class="flavor-price">$${variacion.precio.toFixed(2)}</div>`;
+                }
                 
                 flavorOption.innerHTML = `
                     <div>
                         <div class="flavor-name">${variacion.nombre}</div>
-                        <div class="${precioClass}">$${variacion.precio.toFixed(2)}</div>
+                        ${precioHTML}
                     </div>
                     <div class="flavor-quantity">
                         <button class="quantity-control decrease" ${!variacion.disponible ? 'disabled' : ''}>-</button>
@@ -1188,7 +1195,7 @@
                     
                     quantityInput.addEventListener('change', () => {
                         let currentValue = parseInt(quantityInput.value);
-                        if (isNaN(currentValue) || currentValue < 0) { 
+                        if (isNaN(currentValue) || currentValue < 0) {
                             quantityInput.value = 0;
                         } else if (currentValue > 99) {
                             quantityInput.value = 99;
@@ -1204,6 +1211,7 @@
             // Actualizar estado del botón de agregar al carrito
             actualizarBotonAgregarAlCarrito();
         }
+        
         
         // Función para actualizar el estado del botón "Agregar al Carrito" en el modal
         function actualizarBotonAgregarAlCarrito() {
@@ -1386,8 +1394,8 @@
             }, 3000);
         }
         
-        // Actualizar carrito con soporte para productos en liquidación
-        function actualizarCarrito() {
+                // Actualizar carrito con soporte para productos en liquidación
+                function actualizarCarrito() {
             // Actualizar contador
             const totalItems = carrito.reduce((total, item) => total + item.cantidad, 0);
             cartCount.textContent = totalItems;
@@ -1402,14 +1410,21 @@
                     const cartItem = document.createElement('div');
                     cartItem.className = 'cart-item';
                     
-                    // Determinar si el precio debe mostrarse en rojo (liquidación)
-                    const precioClass = item.liquidacion ? 'sale-price' : 'cart-item-price';
+                    // Determinar cómo mostrar el precio según si está en liquidación o no
+                    let precioHTML = '';
+                    if (item.liquidacion) {
+                        // Para productos en liquidación: precio en rojo, negrita y con la leyenda "Super Sale!"
+                        precioHTML = `<div class="sale-price" style="font-weight: bold;">$${(item.precio * item.cantidad).toFixed(2)} <span style="background-color: var(--sale); color: white; padding: 2px 5px; border-radius: 3px; font-size: 0.8rem; margin-left: 5px;">¡Super Sale!</span></div>`;
+                    } else {
+                        // Para productos normales: precio normal
+                        precioHTML = `<div class="cart-item-price">$${(item.precio * item.cantidad).toFixed(2)}</div>`;
+                    }
                     
                     cartItem.innerHTML = `
                         <div class="cart-item-info">
                             <div class="cart-item-name">${item.nombre}</div>
                             <div class="cart-item-flavor">Sabor: ${item.variacion.nombre}</div>
-                            <div class="${precioClass}">$${(item.precio * item.cantidad).toFixed(2)}</div>
+                            ${precioHTML}
                         </div>
                         <div class="cart-item-quantity">
                             <button class="quantity-btn decrease" data-index="${index}">-</button>
@@ -1460,19 +1475,26 @@
         }
         
         // Actualizar resumen de checkout con soporte para liquidación
-        function actualizarResumenCheckout() {
+                function actualizarResumenCheckout() {
             checkoutItems.innerHTML = '';
             
             carrito.forEach(item => {
                 const summaryItem = document.createElement('div');
                 summaryItem.className = 'summary-item';
                 
-                // Determinar si el precio debe mostrarse en rojo (liquidación)
-                const precioStyle = item.liquidacion ? 'color: var(--sale); font-weight: bold;' : '';
+                // Determinar cómo mostrar el precio según si está en liquidación o no
+                let precioHTML = '';
+                if (item.liquidacion) {
+                    // Para productos en liquidación: precio en rojo, negrita y con la leyenda "Super Sale!"
+                    precioHTML = `<div style="color: var(--sale); font-weight: bold;">$${(item.precio * item.cantidad).toFixed(2)} <span style="background-color: var(--sale); color: white; padding: 2px 5px; border-radius: 3px; font-size: 0.8rem; margin-left: 5px;">¡Super Sale!</span></div>`;
+                } else {
+                    // Para productos normales: precio normal
+                    precioHTML = `<div>$${(item.precio * item.cantidad).toFixed(2)}</div>`;
+                }
                 
                 summaryItem.innerHTML = `
                     <div>${item.nombre} (Sabor: ${item.variacion.nombre}) x${item.cantidad}</div>
-                    <div style="${precioStyle}">$${(item.precio * item.cantidad).toFixed(2)}</div>
+                    ${precioHTML}
                 `;
                 checkoutItems.appendChild(summaryItem);
             });
