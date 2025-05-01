@@ -630,6 +630,68 @@
                 max-width: 100%;
             }
         }
+        /* Estilos para etiquetas de liquidación */
+        .liquidacion-tag {
+            display: inline-block;
+            background-color: #ff3b30;
+            color: white;
+            font-size: 0.8rem;
+            font-weight: bold;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            margin-left: 0.5rem;
+            animation: pulsate 1.5s infinite;
+        }
+        
+        .liquidacion-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #ff3b30;
+            color: white;
+            font-size: 0.8rem;
+            font-weight: bold;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            transform: rotate(15deg);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+        
+        .flavor-liquidacion {
+            background-color: rgba(255, 59, 48, 0.1);
+            border-left: 3px solid #ff3b30;
+        }
+        
+        .flavor-price.liquidacion {
+            color: #ff3b30;
+            font-weight: bold;
+        }
+        
+        .cart-item-liquidacion {
+            background-color: rgba(255, 59, 48, 0.05);
+            border-left: 3px solid #ff3b30;
+        }
+        
+        .liquidacion-tag-small {
+            font-size: 0.7rem;
+            background-color: #ff3b30;
+            color: white;
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+            margin-left: 0.3rem;
+            vertical-align: text-top;
+        }
+        
+        .cart-item-price.liquidacion {
+            color: #ff3b30;
+        }
+        
+        @keyframes pulsate {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -891,6 +953,9 @@
                                     console.warn(`Precio inválido (${value}) en línea ${i+1}. Usando 0.`);
                                 }
                                 break;
+                                case 'liquidacion':
+                                    product.liquidacion = value.toUpperCase() === 'Y' || value.toUpperCase() === 'YES' || value.toUpperCase() === 'SI';
+                                    break;
                             case 'disponible':
                                 product.disponible = value.toUpperCase() === 'Y' || value.toUpperCase() === 'YES' || value.toUpperCase() === 'SI';
                                 break;
@@ -931,15 +996,19 @@
                             nombre: nombreBase,
                             descripcion: producto.descripcion || '',
                             imagen: producto.imagen || '',
+                            enLiquidacion: producto.liquidacion || false,
                             variaciones: []
                         });
                     }
-                    
+                    if (producto.liquidacion) {
+                    productosMap.get(nombreBase).enLiquidacion = true;
+                }
                     // Añadir esta variación con verificación de datos
                     if (producto.sabor) {
                         productosMap.get(nombreBase).variaciones.push({
                             nombre: producto.sabor || `Variación ${productosMap.get(nombreBase).variaciones.length + 1}`,
                             precio: producto.precio || 0,
+                            liquidacion: producto.liquidacion || false,
                             precioProt: protegerPrecio(producto.precio || 0, producto.id || 1),
                             disponible: producto.disponible
                         });
@@ -1015,6 +1084,24 @@
         // Función modificada para cargar productos sin dropdown
         function cargarProductos() {
             productosContainer.innerHTML = '';
+            // Agregar etiqueta de liquidación si corresponde
+            const liquidacionHTML = producto.enLiquidacion ? 
+                '<span class="liquidacion-tag">¡Super Sale!</span>' : '';
+            
+            // Construir HTML del producto con etiqueta de liquidación si corresponde
+            productCard.innerHTML = `
+                <div class="product-image-container" data-product-index="${productoIndex}">
+                    <img src="${imagenUrl}" alt="${producto.nombre}" class="product-image">
+                    ${!hayDisponibles ? '<div class="product-unavailable">No Disponible</div>' : ''}
+                    ${producto.enLiquidacion ? '<div class="liquidacion-badge">¡SUPER SALE!</div>' : ''}
+                </div>
+                <div class="product-info">
+                    <h3 class="product-title">
+                        ${producto.nombre} ${liquidacionHTML}
+                    </h3>
+                    <p class="product-description">${producto.descripcion || ''}</p>
+                </div>
+            `;
             
             if (!productos || productos.length === 0) {
                 productosContainer.innerHTML = '<p style="text-align: center; padding: 2rem;">No hay productos disponibles en este momento.</p>';
@@ -1093,15 +1180,27 @@
             flavorOptions.innerHTML = '';
             
             // Agregar cada sabor como una opción con control de cantidad
-            producto.variaciones.forEach((variacion, index) => {
-                const flavorOption = document.createElement('div');
-                flavorOption.className = `flavor-option ${!variacion.disponible ? 'flavor-unavailable' : ''}`;
-                flavorOption.dataset.index = index;
+producto.variaciones.forEach((variacion, index) => {
+    const flavorOption = document.createElement('div');
+    flavorOption.className = `flavor-option ${!variacion.disponible ? 'flavor-unavailable' : ''}`;
+    flavorOption.dataset.index = index;
+    
+                // Agregar clase especial si está en liquidación
+                if (variacion.liquidacion) {
+                    flavorOption.classList.add('flavor-liquidacion');
+                }
+                
+                // Crear etiqueta de liquidación para el sabor
+                const liquidacionHTML = variacion.liquidacion ? 
+                    '<span class="liquidacion-tag">¡Super Sale!</span>' : '';
+                
+                // Agregar clase especial al precio si está en liquidación
+                const precioClass = variacion.liquidacion ? 'flavor-price liquidacion' : 'flavor-price';
                 
                 flavorOption.innerHTML = `
                     <div>
-                        <div class="flavor-name">${variacion.nombre}</div>
-                        <div class="flavor-price">$${variacion.precio.toFixed(2)}</div>
+                        <div class="flavor-name">${variacion.nombre} ${liquidacionHTML}</div>
+                        <div class="${precioClass}">$${variacion.precio.toFixed(2)}</div>
                     </div>
                     <div class="flavor-quantity">
                         <button class="quantity-control decrease" ${!variacion.disponible ? 'disabled' : ''}>-</button>
@@ -1201,13 +1300,16 @@
                         carrito.push({
                             id: productoActual.id,
                             nombre: productoActual.nombre,
-                            variacion: variacion,
+                            variacion: {
+                                nombre: variacion.nombre,
+                                precio: variacion.precio,
+                                liquidacion: variacion.liquidacion, // Asegurarse de incluir esta propiedad
+                                disponible: variacion.disponible
+                            },
                             precio: variacion.precio,
                             cantidad: cantidad
                         });
                     }
-                }
-            });
             
             if (haySeleccionados) {
                 // Actualizar el carrito
@@ -1346,24 +1448,36 @@
             } else {
                 cartItems.innerHTML = '';
                 carrito.forEach((item, index) => {
-                    const cartItem = document.createElement('div');
-                    cartItem.className = 'cart-item';
-                    
-                    cartItem.innerHTML = `
-                        <div class="cart-item-info">
-                            <div class="cart-item-name">${item.nombre}</div>
-                            <div class="cart-item-flavor">Sabor: ${item.variacion.nombre}</div>
-                            <div class="cart-item-price">$${(item.precio * item.cantidad).toFixed(2)}</div>
-                        </div>
-                        <div class="cart-item-quantity">
-                            <button class="quantity-btn decrease" data-index="${index}">-</button>
-                            <span class="quantity-value">${item.cantidad}</span>
-                            <button class="quantity-btn increase" data-index="${index}">+</button>
-                        </div>
-                        <button class="remove-item" data-index="${index}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    `;
+    const cartItem = document.createElement('div');
+    cartItem.className = 'cart-item';
+    
+                // Agregar clase liquidación si corresponde
+                if (item.variacion.liquidacion) {
+                    cartItem.classList.add('cart-item-liquidacion');
+                }
+                
+                // Crear etiqueta de liquidación para el ítem del carrito
+                const liquidacionHTML = item.variacion.liquidacion ? 
+                    '<span class="liquidacion-tag-small">¡Super Sale!</span>' : '';
+                
+                // Agregar clase al precio si está en liquidación
+                const precioClass = item.variacion.liquidacion ? 'cart-item-price liquidacion' : 'cart-item-price';
+                
+                cartItem.innerHTML = `
+                    <div class="cart-item-info">
+                        <div class="cart-item-name">${item.nombre}</div>
+                        <div class="cart-item-flavor">Sabor: ${item.variacion.nombre} ${liquidacionHTML}</div>
+                        <div class="${precioClass}">$${(item.precio * item.cantidad).toFixed(2)}</div>
+                    </div>
+                    <div class="cart-item-quantity">
+                        <button class="quantity-btn decrease" data-index="${index}">-</button>
+                        <span class="quantity-value">${item.cantidad}</span>
+                        <button class="quantity-btn increase" data-index="${index}">+</button>
+                    </div>
+                    <button class="remove-item" data-index="${index}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
                     
                     cartItems.appendChild(cartItem);
                     
