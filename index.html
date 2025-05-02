@@ -1553,122 +1553,204 @@
                 checkoutOverlay.style.display = 'none';
             }
         });
+        // Función para verificar y advertir sobre los bloqueadores de ventanas emergentes
+    function verificarVentanasEmergentes(whatsappUrl) {
+        // Crear un elemento para el mensaje de advertencia
+        const popupAlert = document.createElement('div');
+        popupAlert.style.position = 'fixed';
+        popupAlert.style.top = '50%';
+        popupAlert.style.left = '50%';
+        popupAlert.style.transform = 'translate(-50%, -50%)';
+        popupAlert.style.backgroundColor = 'white';
+        popupAlert.style.padding = '2rem';
+        popupAlert.style.borderRadius = '8px';
+        popupAlert.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+        popupAlert.style.zIndex = '2100';
+        popupAlert.style.maxWidth = '90%';
+        popupAlert.style.width = '450px';
+        popupAlert.style.textAlign = 'center';
         
-        // Confirmar pedido
-        confirmOrder.addEventListener('click', () => {
-            const nombre = customerName.value.trim();
-            const telefono = customerPhone.value.trim();
-            
-            if (!nombre) {
-                alert('Por favor ingresa tu nombre');
-                return;
+        popupAlert.innerHTML = `
+            <div style="font-size: 3rem; color: #3a6ea5; margin-bottom: 1rem;">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <h3 style="margin-bottom: 1rem; color: #343a40;">Ventana Emergente Bloqueada</h3>
+            <p style="margin-bottom: 1.5rem; color: #666;">
+                Es posible que tu navegador haya bloqueado la ventana de WhatsApp. 
+                Por favor, permite las ventanas emergentes para este sitio y luego haz clic en el botón de abajo.
+            </p>
+            <div style="display: flex; justify-content: space-between; gap: 1rem;">
+                <button id="popup-retry" style="flex: 1; padding: 0.75rem; background-color: #3a6ea5; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Intentar de Nuevo
+                </button>
+                <button id="popup-copy" style="flex: 1; padding: 0.75rem; background-color: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Copiar Enlace
+                </button>
+                <button id="popup-close" style="flex: 1; padding: 0.75rem; background-color: #f8f9fa; color: #343a40; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">
+                    Cancelar
+                </button>
+            </div>
+        `;
+        
+        document.body.appendChild(popupAlert);
+        
+        // Evento para el botón de reintento
+        document.getElementById('popup-retry').addEventListener('click', () => {
+            document.body.removeChild(popupAlert);
+            // Intentamos abrir la ventana de nuevo
+            const nuevaVentana = window.open(whatsappUrl, '_blank');
+            if (!nuevaVentana || nuevaVentana.closed || typeof nuevaVentana.closed === 'undefined') {
+                // Si todavía está bloqueada, mostramos el mensaje de nuevo
+                verificarVentanasEmergentes(whatsappUrl);
             }
-            
-            if (!telefono) {
-                alert('Por favor ingresa tu número de teléfono');
-                return;
-            }
-            
-            // Verificar integridad de los precios en el carrito
-            const preciosValidos = carrito.every(item => {
-                return item.precio > 0 && !isNaN(item.precio);
-            });
-            
-            if (!preciosValidos) {
-                alert('Error en los precios del carrito. Por favor, recarga la página e intenta de nuevo.');
-                return;
-            }
-            
-            // Validar que el total sea correcto (comprobación adicional)
-            const totalCalculado = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
-            const totalMostrado = parseFloat(summaryTotal.textContent.replace('Total: $', ''));
-            
-            if (Math.abs(totalCalculado - totalMostrado) > 0.01) { // Permitir pequeñas diferencias por redondeo
-                alert('Error en el cálculo del total. Por favor, recarga la página e intenta de nuevo.');
-                return;
-            }
-            
-            // Mostrar loader
-            loader.style.display = 'flex';
-            
-            // Simular envío (aquí iría el código para enviar a WhatsApp)
-            setTimeout(() => {
-                // Preparar mensaje de WhatsApp con formato mejorado y simplificado
-                let mensaje = `*Nuevo Pedido*%0A%0A`;
-                mensaje += `*Cliente:* ${nombre}%0A`;
-                mensaje += `*Teléfono:* ${telefono}%0A%0A`;
-                mensaje += `*Productos:*%0A`;
-                
-                // Agrupar productos por nombre
-                const productosAgrupados = {};
-                carrito.forEach(item => {
-                    if (!productosAgrupados[item.nombre]) {
-                        productosAgrupados[item.nombre] = [];
-                    }
-                    productosAgrupados[item.nombre].push(item);
-                });
-                
-                // Variable para contar el total de piezas
-                let totalPiezas = 0;
-                
-                // Generar mensaje agrupado sin precios, solo cantidades
-                Object.keys(productosAgrupados).forEach(nombreProducto => {
-                    // Añadir nombre del producto
-                    mensaje += `*${nombreProducto}*%0A`;
-                    
-                    // Calcular total de piezas por producto
-                    let piezasProducto = 0;
-                    
-                    // Añadir cada sabor
-                    productosAgrupados[nombreProducto].forEach(item => {
-                        // Marcar si está en liquidación
-                        const liquidacionMark = item.liquidacion ? " (LIQUIDACIÓN)" : "";
-                        mensaje += `   - ${item.variacion.nombre}${liquidacionMark} x${item.cantidad}%0A`;
-                        piezasProducto += item.cantidad;
-                        totalPiezas += item.cantidad;
-                    });
-                    
-                    // Añadir total de piezas del producto
-                    mensaje += `   Total piezas ${nombreProducto}: ${piezasProducto}%0A%0A`;
-                });
-                
-                // Añadir total de piezas general
-                mensaje += `*Total piezas pedido:* ${totalPiezas}%0A%0A`;
-                
-                // Añadir sección para copiar y pegar
-                mensaje += `*Resumen para inventario:*%0A`;
-                mensaje += `Producto%09Total piezas%0A`; // %09 es el código para tabulación
-                
-                // Añadir cada producto con su total de piezas separado por tabulador
-                Object.keys(productosAgrupados).forEach(nombreProducto => {
-                    let piezasProducto = 0;
-                    productosAgrupados[nombreProducto].forEach(item => {
-                        piezasProducto += item.cantidad;
-                    });
-                    mensaje += `${nombreProducto}%09${piezasProducto}%0A`;
-                });
-                
-                // Número de WhatsApp del vendedor (reemplazar con el número real)
-                const numeroWhatsapp = '+526391239619'; // Reemplaza con tu número real
-                
-                // Crear URL de WhatsApp
-                const whatsappUrl = `https://wa.me/${numeroWhatsapp}?text=${mensaje}`;
-                
-                // Abrir WhatsApp en nueva pestaña
-                window.open(whatsappUrl, '_blank');
-                
-                // Ocultar loader y checkout
-                loader.style.display = 'none';
-                checkoutOverlay.style.display = 'none';
-                
-                // Mostrar mensaje de éxito
-                successMessage.style.display = 'block';
-                
-                // Vaciar carrito
-                carrito = [];
-                actualizarCarrito();
-            }, 1500);
         });
+        
+        // Evento para el botón de copiar enlace
+        document.getElementById('popup-copy').addEventListener('click', () => {
+            navigator.clipboard.writeText(whatsappUrl).then(() => {
+                // Cambiamos el texto del botón para dar feedback
+                const copyBtn = document.getElementById('popup-copy');
+                copyBtn.textContent = '¡Enlace Copiado!';
+                copyBtn.style.backgroundColor = '#28a745';
+                
+                // Restauramos después de un tiempo
+                setTimeout(() => {
+                    copyBtn.textContent = 'Copiar Enlace';
+                    copyBtn.style.backgroundColor = '#6c757d';
+                }, 2000);
+            }).catch(err => {
+                console.error('Error al copiar: ', err);
+                alert('No se pudo copiar el enlace. Por favor, inténtalo manualmente.');
+            });
+        });
+        
+        // Evento para el botón de cerrar
+        document.getElementById('popup-close').addEventListener('click', () => {
+            document.body.removeChild(popupAlert);
+        });
+    }
+        // Confirmar pedido
+    confirmOrder.addEventListener('click', () => {
+    const nombre = customerName.value.trim();
+    const telefono = customerPhone.value.trim();
+    
+    if (!nombre) {
+        alert('Por favor ingresa tu nombre');
+        return;
+    }
+    
+    if (!telefono) {
+        alert('Por favor ingresa tu número de teléfono');
+        return;
+    }
+    
+    // Verificar integridad de los precios en el carrito
+    const preciosValidos = carrito.every(item => {
+        return item.precio > 0 && !isNaN(item.precio);
+    });
+    
+    if (!preciosValidos) {
+        alert('Error en los precios del carrito. Por favor, recarga la página e intenta de nuevo.');
+        return;
+    }
+    
+    // Validar que el total sea correcto (comprobación adicional)
+    const totalCalculado = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+    const totalMostrado = parseFloat(summaryTotal.textContent.replace('Total: $', ''));
+    
+    if (Math.abs(totalCalculado - totalMostrado) > 0.01) { // Permitir pequeñas diferencias por redondeo
+        alert('Error en el cálculo del total. Por favor, recarga la página e intenta de nuevo.');
+        return;
+    }
+    
+    // Mostrar loader
+    loader.style.display = 'flex';
+    
+    // Preparar mensaje de WhatsApp con formato mejorado y simplificado
+    let mensaje = `*Nuevo Pedido*%0A%0A`;
+    mensaje += `*Cliente:* ${nombre}%0A`;
+    mensaje += `*Teléfono:* ${telefono}%0A%0A`;
+    mensaje += `*Productos:*%0A`;
+    
+    // Agrupar productos por nombre
+    const productosAgrupados = {};
+    carrito.forEach(item => {
+        if (!productosAgrupados[item.nombre]) {
+            productosAgrupados[item.nombre] = [];
+        }
+        productosAgrupados[item.nombre].push(item);
+    });
+    
+    // Variable para contar el total de piezas
+    let totalPiezas = 0;
+    
+    // Generar mensaje agrupado sin precios, solo cantidades
+    Object.keys(productosAgrupados).forEach(nombreProducto => {
+        // Añadir nombre del producto
+        mensaje += `*${nombreProducto}*%0A`;
+        
+        // Calcular total de piezas por producto
+        let piezasProducto = 0;
+        
+        // Añadir cada sabor
+        productosAgrupados[nombreProducto].forEach(item => {
+            // Marcar si está en liquidación
+            const liquidacionMark = item.liquidacion ? " (LIQUIDACIÓN)" : "";
+            mensaje += `   - ${item.variacion.nombre}${liquidacionMark} x${item.cantidad}%0A`;
+            piezasProducto += item.cantidad;
+            totalPiezas += item.cantidad;
+        });
+        
+        // Añadir total de piezas del producto
+        mensaje += `   Total piezas ${nombreProducto}: ${piezasProducto}%0A%0A`;
+    });
+    
+    // Añadir total de piezas general
+    mensaje += `*Total piezas pedido:* ${totalPiezas}%0A%0A`;
+    
+    // Añadir sección para copiar y pegar
+    mensaje += `*Resumen para inventario:*%0A`;
+    mensaje += `Producto%09Total piezas%0A`; // %09 es el código para tabulación
+    
+    // Añadir cada producto con su total de piezas separado por tabulador
+    Object.keys(productosAgrupados).forEach(nombreProducto => {
+        let piezasProducto = 0;
+        productosAgrupados[nombreProducto].forEach(item => {
+            piezasProducto += item.cantidad;
+        });
+        mensaje += `${nombreProducto}%09${piezasProducto}%0A`;
+    });
+    
+    // Número de WhatsApp del vendedor (reemplazar con el número real)
+    const numeroWhatsapp = '+526391239619'; // Reemplaza con tu número real
+    
+    // Crear URL de WhatsApp
+    const whatsappUrl = `https://wa.me/${numeroWhatsapp}?text=${mensaje}`;
+    
+    // Ocultar loader y checkout después de un breve retardo
+    setTimeout(() => {
+        // Ocultar loader y checkout
+        loader.style.display = 'none';
+        checkoutOverlay.style.display = 'none';
+        
+        // Intentar abrir WhatsApp en nueva pestaña
+        const ventanaWhatsApp = window.open(whatsappUrl, '_blank');
+        
+        // Verificar si la ventana se abrió correctamente
+        if (!ventanaWhatsApp || ventanaWhatsApp.closed || typeof ventanaWhatsApp.closed === 'undefined') {
+            // Si la ventana fue bloqueada, mostrar el mensaje
+            verificarVentanasEmergentes(whatsappUrl);
+        } else {
+            // Si se abrió correctamente, mostrar mensaje de éxito
+            successMessage.style.display = 'block';
+            
+            // Vaciar carrito
+            carrito = [];
+            actualizarCarrito();
+        }
+    }, 1500);
+});
+
         
         // Continuar comprando después de éxito
         successBtn.addEventListener('click', () => {
