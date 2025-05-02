@@ -776,7 +776,7 @@
         
         // URL de la hoja publicada como CSV - Reemplaza con tu URL
         const GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTSfNRclhMLcT7SyOOppUPbPQtSLnZTrGlHt-kTCdKUoGVgiUODTs4SQHpmcx_bKfvDc3RcsTu28JTP/pub?output=csv';
-        
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxfvDqAkIB1Rbk2jvBkykrQvZ3e7eANkNfV7IASXzb5kWDKuL2Xr-y6saREnJnxBQcv/exec'; // REEMPLAZA ESTO
         // Carrito de compras
         let carrito = [];
         
@@ -1554,121 +1554,166 @@
             }
         });
         
-        // Confirmar pedido
-        confirmOrder.addEventListener('click', () => {
-            const nombre = customerName.value.trim();
-            const telefono = customerPhone.value.trim();
-            
-            if (!nombre) {
-                alert('Por favor ingresa tu nombre');
-                return;
-            }
-            
-            if (!telefono) {
-                alert('Por favor ingresa tu número de teléfono');
-                return;
-            }
-            
-            // Verificar integridad de los precios en el carrito
-            const preciosValidos = carrito.every(item => {
-                return item.precio > 0 && !isNaN(item.precio);
-            });
-            
-            if (!preciosValidos) {
-                alert('Error en los precios del carrito. Por favor, recarga la página e intenta de nuevo.');
-                return;
-            }
-            
-            // Validar que el total sea correcto (comprobación adicional)
-            const totalCalculado = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
-            const totalMostrado = parseFloat(summaryTotal.textContent.replace('Total: $', ''));
-            
-            if (Math.abs(totalCalculado - totalMostrado) > 0.01) { // Permitir pequeñas diferencias por redondeo
-                alert('Error en el cálculo del total. Por favor, recarga la página e intenta de nuevo.');
-                return;
-            }
-            
-            // Mostrar loader
-            loader.style.display = 'flex';
-            
-            // Simular envío (aquí iría el código para enviar a WhatsApp)
-            setTimeout(() => {
-                // Preparar mensaje de WhatsApp con formato mejorado y simplificado
-                let mensaje = `*Nuevo Pedido*%0A%0A`;
-                mensaje += `*Cliente:* ${nombre}%0A`;
-                mensaje += `*Teléfono:* ${telefono}%0A%0A`;
-                mensaje += `*Productos:*%0A`;
-                
-                // Agrupar productos por nombre
-                const productosAgrupados = {};
-                carrito.forEach(item => {
-                    if (!productosAgrupados[item.nombre]) {
-                        productosAgrupados[item.nombre] = [];
-                    }
-                    productosAgrupados[item.nombre].push(item);
-                });
-                
-                // Variable para contar el total de piezas
-                let totalPiezas = 0;
-                
-                // Generar mensaje agrupado sin precios, solo cantidades
-                Object.keys(productosAgrupados).forEach(nombreProducto => {
-                    // Añadir nombre del producto
-                    mensaje += `*${nombreProducto}*%0A`;
-                    
-                    // Calcular total de piezas por producto
-                    let piezasProducto = 0;
-                    
-                    // Añadir cada sabor
-                    productosAgrupados[nombreProducto].forEach(item => {
-                        // Marcar si está en liquidación
-                        const liquidacionMark = item.liquidacion ? " (LIQUIDACIÓN)" : "";
-                        mensaje += `   - ${item.variacion.nombre}${liquidacionMark} x${item.cantidad}%0A`;
-                        piezasProducto += item.cantidad;
-                        totalPiezas += item.cantidad;
-                    });
-                    
-                    // Añadir total de piezas del producto
-                    mensaje += `   Total piezas ${nombreProducto}: ${piezasProducto}%0A%0A`;
-                });
-                
-                // Añadir total de piezas general
-                mensaje += `*Total piezas pedido:* ${totalPiezas}%0A%0A`;
-                
-                // Añadir sección para copiar y pegar
-                mensaje += `*Resumen para inventario:*%0A`;
-                mensaje += `Producto%09Total piezas%0A`; // %09 es el código para tabulación
-                
-                // Añadir cada producto con su total de piezas separado por tabulador
-                Object.keys(productosAgrupados).forEach(nombreProducto => {
-                    let piezasProducto = 0;
-                    productosAgrupados[nombreProducto].forEach(item => {
-                        piezasProducto += item.cantidad;
-                    });
-                    mensaje += `${nombreProducto}%09${piezasProducto}%0A`;
-                });
-                
-                // Número de WhatsApp del vendedor (reemplazar con el número real)
-                const numeroWhatsapp = '+526391239619'; // Reemplaza con tu número real
-                
-                // Crear URL de WhatsApp
-                const whatsappUrl = `https://wa.me/${numeroWhatsapp}?text=${mensaje}`;
-                
-                // Abrir WhatsApp en nueva pestaña
-                window.open(whatsappUrl, '_blank');
-                
-                // Ocultar loader y checkout
-                loader.style.display = 'none';
-                checkoutOverlay.style.display = 'none';
-                
-                // Mostrar mensaje de éxito
-                successMessage.style.display = 'block';
-                
-                // Vaciar carrito
-                carrito = [];
-                actualizarCarrito();
-            }, 1500);
+        // Confirmar pedidoconfirmOrder.addEventListener('click', () => {
+    const nombre = customerName.value.trim();
+    const telefono = customerPhone.value.trim();
+    
+    if (!nombre) {
+        alert('Por favor ingresa tu nombre');
+        return;
+    }
+    
+    if (!telefono) {
+        alert('Por favor ingresa tu número de teléfono');
+        return;
+    }
+    
+    // Verificar integridad de los precios en el carrito
+    const preciosValidos = carrito.every(item => {
+        return item.precio > 0 && !isNaN(item.precio);
+    });
+    
+    if (!preciosValidos) {
+        alert('Error en los precios del carrito. Por favor, recarga la página e intenta de nuevo.');
+        return;
+    }
+    
+    // Validar que el total sea correcto (comprobación adicional)
+    const totalCalculado = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+    const totalMostrado = parseFloat(summaryTotal.textContent.replace('Total: $', ''));
+    
+    if (Math.abs(totalCalculado - totalMostrado) > 0.01) {
+        alert('Error en el cálculo del total. Por favor, recarga la página e intenta de nuevo.');
+        return;
+    }
+    
+    // Mostrar loader
+    loader.style.display = 'flex';
+    
+    // Preparar los datos del pedido para enviar al script de Google
+    const pedidoData = {
+        cliente: nombre,
+        telefono: telefono,
+        fecha: new Date().toISOString(),
+        productos: carrito.map(item => ({
+            nombre: item.nombre,
+            variacion: item.variacion.nombre,
+            precio: item.precio,
+            cantidad: item.cantidad,
+            liquidacion: item.liquidacion || false
+        })),
+        total: totalCalculado
+    };
+    
+    // Preparar mensaje de WhatsApp (código original)
+    let mensaje = `*Nuevo Pedido*%0A%0A`;
+    mensaje += `*Cliente:* ${nombre}%0A`;
+    mensaje += `*Teléfono:* ${telefono}%0A%0A`;
+    mensaje += `*Productos:*%0A`;
+    
+    // Agrupar productos por nombre (código original)
+    const productosAgrupados = {};
+    carrito.forEach(item => {
+        if (!productosAgrupados[item.nombre]) {
+            productosAgrupados[item.nombre] = [];
+        }
+        productosAgrupados[item.nombre].push(item);
+    });
+    
+    // Variable para contar el total de piezas (código original)
+    let totalPiezas = 0;
+    
+    // Generar mensaje agrupado sin precios, solo cantidades (código original)
+    Object.keys(productosAgrupados).forEach(nombreProducto => {
+        // Añadir nombre del producto
+        mensaje += `*${nombreProducto}*%0A`;
+        
+        // Calcular total de piezas por producto
+        let piezasProducto = 0;
+        
+        // Añadir cada sabor
+        productosAgrupados[nombreProducto].forEach(item => {
+            // Marcar si está en liquidación
+            const liquidacionMark = item.liquidacion ? " (LIQUIDACIÓN)" : "";
+            mensaje += `   - ${item.variacion.nombre}${liquidacionMark} x${item.cantidad}%0A`;
+            piezasProducto += item.cantidad;
+            totalPiezas += item.cantidad;
         });
+        
+        // Añadir total de piezas del producto
+        mensaje += `   Total piezas ${nombreProducto}: ${piezasProducto}%0A%0A`;
+    });
+    
+    // Añadir total de piezas general (código original)
+    mensaje += `*Total piezas pedido:* ${totalPiezas}%0A%0A`;
+    
+    // Añadir sección para copiar y pegar (código original)
+    mensaje += `*Resumen para inventario:*%0A`;
+    mensaje += `Producto%09Total piezas%0A`; // %09 es el código para tabulación
+    
+    // Añadir cada producto con su total de piezas separado por tabulador (código original)
+    Object.keys(productosAgrupados).forEach(nombreProducto => {
+        let piezasProducto = 0;
+        productosAgrupados[nombreProducto].forEach(item => {
+            piezasProducto += item.cantidad;
+        });
+        mensaje += `${nombreProducto}%09${piezasProducto}%0A`;
+    });
+    
+    // Número de WhatsApp del vendedor (código original)
+    const numeroWhatsapp = '+526391239619';
+    
+    // Enviar datos a Google Script para procesamiento
+    console.log('Enviando datos del pedido al servidor...');
+    
+    // Usar fetch para enviar los datos a Google Apps Script
+    fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors', // Importante para evitar problemas de CORS con Google Script
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(pedidoData)
+    })
+    .then(() => {
+        console.log('Pedido enviado al servidor correctamente');
+        
+        // Continuar con el proceso normal de WhatsApp (código original)
+        const whatsappUrl = `https://wa.me/${numeroWhatsapp}?text=${mensaje}`;
+        window.open(whatsappUrl, '_blank');
+        
+        // Ocultar loader y checkout
+        loader.style.display = 'none';
+        checkoutOverlay.style.display = 'none';
+        
+        // Mostrar mensaje de éxito
+        successMessage.style.display = 'block';
+        
+        // Vaciar carrito
+        carrito = [];
+        actualizarCarrito();
+    })
+    .catch(error => {
+        console.error('Error al enviar pedido al servidor:', error);
+        
+        // Aunque falle el envío al servidor, continuar con WhatsApp
+        alert('No se pudo registrar el pedido en el sistema, pero se continuará con el envío por WhatsApp.');
+        
+        const whatsappUrl = `https://wa.me/${numeroWhatsapp}?text=${mensaje}`;
+        window.open(whatsappUrl, '_blank');
+        
+        // Ocultar loader y checkout
+        loader.style.display = 'none';
+        checkoutOverlay.style.display = 'none';
+        
+        // Mostrar mensaje de éxito
+        successMessage.style.display = 'block';
+        
+        // Vaciar carrito
+        carrito = [];
+        actualizarCarrito();
+    });
+});
         
         // Continuar comprando después de éxito
         successBtn.addEventListener('click', () => {
