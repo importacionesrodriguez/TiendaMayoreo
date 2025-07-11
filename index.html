@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
 
-        .catalog-download-btn {
+  //      .catalog-download-btn {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     padding: 12px 24px;
@@ -23,6 +23,50 @@
     gap: 8px;
     text-decoration: none;
     margin: 20px 0;
+}
+
+.catalog-download-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+.catalog-download-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.loading-spinner {
+    border: 2px solid #ffffff30;
+    border-top: 2px solid #ffffff;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    animation: spin 1s linear infinite;
+}//
+
+        .catalog-download-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    
+    /* NUEVAS PROPIEDADES PARA POSICIÓN FLOTANTE */
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 1000;
+    margin: 0; /* Quita el margen anterior */
 }
 
 .catalog-download-btn:hover {
