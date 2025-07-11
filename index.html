@@ -758,7 +758,7 @@
             <!-- Agregar AQUÍ el botón -->
 <div class="catalog-download-section">
     <h3>📋 Descargar Catálogo</h3>
-    <p>Obtén nuestro catálogo con información de productos: nombre, descripción y sabores disponibles</p>
+    <p>Descarga nuestro catalogo de productos disponibles!</p>
     
     <button class="download-catalog-btn" onclick="downloadCatalog()" id="downloadCatalogBtn">
         <span class="download-icon">📥</span>
@@ -1976,7 +1976,7 @@ async function downloadCatalog() {
         const lines = csvText.split('\n');
         const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
         
-        const columnsToInclude = ['nombre', 'descripcion', 'sabor'];
+        const columnsToInclude = ['Nombre', 'Descripcion', 'Sabor'];
         const products = [];
         
         for (let i = 1; i < lines.length; i++) {
@@ -2020,7 +2020,7 @@ async function downloadCatalog() {
         XLSX.utils.book_append_sheet(wb, ws, 'Catálogo de Productos');
         
         const fechaActual = new Date().toISOString().split('T')[0];
-        const nombreArchivo = `Catalogo_ImportacionesRodriguez_${fechaActual}.xlsx`;
+        const nombreArchivo = `Catalogo_Vapes_${fechaActual}.xlsx`;
         
         XLSX.writeFile(wb, nombreArchivo);
         
