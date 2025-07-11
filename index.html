@@ -1,11 +1,90 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <style>
+/* Estilos para el botón de descarga */
+.catalog-download-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.catalog-download-section h3 {
+    color: white;
+    margin: 0 0 10px 0;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.catalog-download-section p {
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0 0 20px 0;
+    font-size: 16px;
+}
+
+.download-catalog-btn {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.download-catalog-btn:hover {
+    background: linear-gradient(135deg, #218838, #1e7e34);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.5);
+}
+
+.download-catalog-btn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.download-status {
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 5px;
+    font-weight: bold;
+    display: none;
+}
+
+.status-success {
+    background-color: rgba(212, 237, 218, 0.9);
+    color: #155724;
+}
+
+.status-error {
+    background-color: rgba(248, 215, 218, 0.9);
+    color: #721c24;
+}
+
+.status-loading {
+    background-color: rgba(255, 243, 205, 0.9);
+    color: #856404;
+}
+</style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi Tienda Online</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        
         :root {
             --primary: #3a6ea5;
             --secondary: #c0c5ce;
@@ -676,6 +755,20 @@
     
     <main>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <!-- Agregar AQUÍ el botón -->
+<div class="catalog-download-section">
+    <h3>📋 Descargar Catálogo</h3>
+    <p>Obtén nuestro catálogo con información de productos: nombre, descripción y sabores disponibles</p>
+    
+    <button class="download-catalog-btn" onclick="downloadCatalog()" id="downloadCatalogBtn">
+        <span class="download-icon">📥</span>
+        Descargar Catálogo
+    </button>
+    
+    <div id="downloadStatus" class="download-status"></div>
+</div>
+
+<h1>Nuestros Productos</h1>
             <h1>Nuestros Productos</h1>
             <button id="refresh-btn" class="refresh-button">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1840,5 +1933,107 @@
             actualizarCarrito();
         });
     </script>
+
+    <!-- Script para descarga de catálogo -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// Configuración de tu Google Sheets
+const SHEET_ID = '1IQMowlxeCundG46nFYxNpeZqiblmbGYhWBrAfHd6m-s';
+const SHEET_NAME = 'INVENTARIO_PRINCIPAL'; // Cambiar por el nombre real de tu hoja
+
+function showDownloadStatus(message, type) {
+    const statusDiv = document.getElementById('downloadStatus');
+    statusDiv.textContent = message;
+    statusDiv.className = `download-status status-${type}`;
+    statusDiv.style.display = 'block';
+    
+    if (type === 'success') {
+        setTimeout(() => {
+            statusDiv.style.display = 'none';
+        }, 3000);
+    }
+}
+
+async function downloadCatalog() {
+    const btn = document.getElementById('downloadCatalogBtn');
+    const originalText = btn.innerHTML;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳</span> Preparando catálogo...';
+    
+    try {
+        showDownloadStatus('Descargando datos del catálogo...', 'loading');
+        
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
+        
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error('No se pudo acceder a los datos. Verifica que la hoja sea pública.');
+        }
+        
+        const csvText = await response.text();
+        
+        const lines = csvText.split('\n');
+        const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+        
+        const columnsToInclude = ['nombre', 'descripcion', 'sabor'];
+        const products = [];
+        
+        for (let i = 1; i < lines.length; i++) {
+            if (lines[i].trim()) {
+                const values = lines[i].split(',').map(v => v.replace(/"/g, '').trim());
+                const product = {};
+                
+                headers.forEach((header, index) => {
+                    const headerLower = header.toLowerCase();
+                    if (columnsToInclude.includes(headerLower)) {
+                        product[header] = values[index] || '';
+                    }
+                });
+                
+                if (Object.keys(product).length > 0) {
+                    products.push(product);
+                }
+            }
+        }
+        
+        if (products.length === 0) {
+            throw new Error('No se encontraron productos en el catálogo');
+        }
+        
+        btn.innerHTML = '<span>📊</span> Generando archivo Excel...';
+        showDownloadStatus('Generando archivo Excel...', 'loading');
+        
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(products);
+        
+        const includedHeaders = Object.keys(products[0] || {});
+        const colWidths = includedHeaders.map(header => {
+            const maxLength = Math.max(
+                header.length,
+                ...products.map(product => String(product[header] || '').length)
+            );
+            return { width: Math.min(maxLength + 2, 30) };
+        });
+        ws['!cols'] = colWidths;
+        
+        XLSX.utils.book_append_sheet(wb, ws, 'Catálogo de Productos');
+        
+        const fechaActual = new Date().toISOString().split('T')[0];
+        const nombreArchivo = `Catalogo_ImportacionesRodriguez_${fechaActual}.xlsx`;
+        
+        XLSX.writeFile(wb, nombreArchivo);
+        
+        showDownloadStatus(`✅ Catálogo descargado: ${products.length} productos (nombre, descripción, sabor)`, 'success');
+        
+    } catch (error) {
+        console.error('Error al descargar catálogo:', error);
+        showDownloadStatus(`❌ Error: ${error.message}`, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+</script>
 </body>
 </html>
