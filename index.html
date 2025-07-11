@@ -1976,7 +1976,7 @@ async function downloadCatalog() {
         const lines = csvText.split('\n');
         const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
         
-        const columnsToInclude = ['Nombre', 'Descripcion', 'Sabor'];
+        const columnsToInclude = ['nombre', 'descripcion', 'sabor'];
         const products = [];
         
         for (let i = 1; i < lines.length; i++) {
