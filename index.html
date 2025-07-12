@@ -1,0 +1,2091 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo en Humo</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #3a6ea5;
+            --secondary: #c0c5ce;
+            --accent: #ff6b6b;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --sale: #ff0000;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light);
+            color: var(--dark);
+        }
+        
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        /* Estilos para el botón flotante */
+.catalog-download-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: auto;
+    min-width: 200px;
+    height: 50px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    z-index: 1000;
+    padding: 0 20px;
+    color: white;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.catalog-download-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
+}
+
+.catalog-download-btn:active {
+    transform: scale(0.95);
+}
+
+.catalog-download-btn svg {
+    fill: white;
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+}
+
+/* Loading state */
+.catalog-download-btn.loading {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.catalog-download-btn.loading svg {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Notification */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #4CAF50;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    z-index: 1001;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    opacity: 0;
+    transform: translateX(300px);
+    transition: all 0.3s ease;
+}
+
+.notification.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.notification.error {
+    background: #f44336;
+}
+        
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .cart-icon {
+            position: relative;
+            cursor: pointer;
+            height: 32px;
+            width: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .cart-icon svg {
+            color: white;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .cart-icon:hover svg {
+            transform: scale(1.1);
+            transition: transform 0.2s ease;
+        }
+        
+        .cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: var(--accent);
+            color: white;
+            font-size: 0.7rem;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        
+        main {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .products-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .product-card {
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            cursor: default;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .product-image-container {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .product-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            aspect-ratio: 1 / 1;
+        }
+        
+        .product-unavailable {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .product-info {
+            padding: 1.5rem;
+        }
+        
+        .product-title {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .product-description {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            line-height: 1.4;
+        }
+        
+        .product-price {
+            color: var(--primary);
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Nuevos estilos para productos en liquidación */
+        .sale-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: var(--sale);
+            color: white;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-weight: bold;
+            z-index: 10;
+            animation: pulsate 1.5s infinite;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+        
+        @keyframes pulsate {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        
+        .sale-price {
+            color: var(--sale) !important;
+            position: relative;
+        }
+        
+        /* Flavor Modal Styles */
+        .flavor-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .flavor-modal {
+            background-color: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        
+        .flavor-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--secondary);
+        }
+        
+        .flavor-modal-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .close-flavor-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--dark);
+        }
+        
+        .flavor-options {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .flavor-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+        }
+        
+        .flavor-name {
+            font-weight: 500;
+        }
+        
+        .flavor-price {
+            color: var(--primary);
+            font-weight: bold;
+        }
+        
+        .flavor-unavailable {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        
+        .flavor-quantity {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .quantity-control {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 1px solid var(--secondary);
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+        
+        .quantity-control:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .quantity-input {
+            width: 40px;
+            height: 28px;
+            text-align: center;
+            border: 1px solid var(--secondary);
+            border-radius: 4px;
+        }
+        
+        .add-flavors-to-cart {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 1rem;
+            transition: background-color 0.3s ease;
+        }
+        
+        .add-flavors-to-cart:hover {
+            background-color: #2c5282;
+        }
+        
+        .add-flavors-to-cart:disabled {
+            background-color: var(--secondary);
+            cursor: not-allowed;
+        }
+        
+        /* Cart Styles */
+        .cart-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: flex-end;
+            z-index: 1000;
+        }
+        
+        .cart-container {
+            width: 100%;
+            max-width: 400px;
+            height: 100%;
+            background-color: white;
+            overflow-y: auto;
+            transform: translateX(100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .cart-header {
+            background-color: var(--primary);
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .close-cart {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .cart-items {
+            padding: 1rem;
+        }
+        
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--secondary);
+        }
+        
+        .cart-item-info {
+            flex-grow: 1;
+            padding: 0 1rem;
+        }
+        
+        .cart-item-name {
+            font-weight: bold;
+        }
+        
+        .cart-item-flavor {
+            color: #555;
+            font-size: 0.9rem;
+        }
+        
+        .cart-item-price {
+            color: var(--primary);
+        }
+        
+        .cart-item-quantity {
+            display: flex;
+            align-items: center;
+            margin-right: 1rem;
+        }
+        
+        .quantity-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 1px solid var(--secondary);
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+        
+        .quantity-btn:hover {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .quantity-value {
+            margin: 0 0.5rem;
+            min-width: 20px;
+            text-align: center;
+        }
+        
+        .remove-item {
+            background: none;
+            border: none;
+            color: var(--accent);
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        
+        .cart-total {
+            padding: 1rem;
+            font-weight: bold;
+            font-size: 1.1rem;
+            border-top: 2px solid var(--secondary);
+            text-align: right;
+        }
+        
+        .checkout-btn {
+            width: 100%;
+            padding: 1rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: background-color 0.3s ease;
+        }
+        
+        .checkout-btn:hover {
+            background-color: #2c5282;
+        }
+        
+        /* Checkout Form */
+        .checkout-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1100;
+        }
+        
+        .checkout-container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .checkout-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .close-checkout {
+            background: none;
+            border: none;
+            color: var(--dark);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .checkout-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .form-group label {
+            font-weight: bold;
+        }
+        
+        .form-group input {
+            padding: 0.75rem;
+            border: 1px solid var(--secondary);
+            border-radius: 4px;
+        }
+        
+        .checkout-summary {
+            margin-top: 1.5rem;
+            border-top: 1px solid var(--secondary);
+            padding-top: 1.5rem;
+        }
+        
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        
+        .summary-total {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--secondary);
+        }
+        
+        .confirm-order {
+            width: 100%;
+            padding: 1rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            margin-top: 1.5rem;
+            transition: background-color 0.3s ease;
+        }
+        
+        .confirm-order:hover {
+            background-color: #2c5282;
+        }
+        
+        .empty-cart-message {
+            text-align: center;
+            padding: 2rem;
+            color: #777;
+        }
+        
+        .loader {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid var(--secondary);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        .refresh-button {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .refresh-button:hover {
+            background-color: #2c5282;
+        }
+        
+        .refresh-button svg {
+            transition: transform 0.3s ease;
+        }
+        
+        .refresh-button:hover svg {
+            transform: rotate(180deg);
+        }
+        
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        
+        /* Success Message */
+        .success-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            text-align: center;
+            z-index: 2000;
+            display: none;
+        }
+        
+        .success-icon {
+            font-size: 3rem;
+            color: #28a745;
+            margin-bottom: 1rem;
+        }
+        
+        .success-text {
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .success-btn {
+            padding: 0.75rem 1.5rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        @media (max-width: 768px) {
+            .products-container {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
+            
+            .cart-container {
+                max-width: 100%;
+            }
+        }
+    </style>
+    <!-- html para boton -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="logo">Todo en Humo</div>
+            <div class="cart-icon" id="cart-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="9" cy="21" r="1"></circle>
+                    <circle cx="20" cy="21" r="1"></circle>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+                <span class="cart-count" id="cart-count">0</span>
+            </div>
+        </nav>
+    </header>
+    
+    <main>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h1>Nuestros Productos</h1>
+            <button id="refresh-btn" class="refresh-button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 4v6h-6"></path>
+                    <path d="M1 20v-6h6"></path>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path>
+                    <path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"></path>
+                </svg>
+                Actualizar
+            </button>
+        </div>
+        <div class="products-container" id="products-container">
+            <!-- Los productos se cargarán aquí desde JavaScript -->
+        </div>
+    </main>
+    
+    <!-- Carrito -->
+    <div class="cart-overlay" id="cart-overlay">
+        <div class="cart-container" id="cart-container">
+            <div class="cart-header">
+                <h2>Carrito de Compras</h2>
+                <button class="close-cart" id="close-cart">×</button>
+            </div>
+            <div class="cart-items" id="cart-items">
+                <!-- Los items del carrito se mostrarán aquí -->
+                <div class="empty-cart-message">Tu carrito está vacío</div>
+            </div>
+            <div class="cart-total" id="cart-total">
+                Total: $0.00
+            </div>
+            <button class="checkout-btn" id="checkout-btn">Proceder al Pago</button>
+        </div>
+    </div>
+    
+    <!-- Formulario de Checkout -->
+    <div class="checkout-overlay" id="checkout-overlay">
+        <div class="checkout-container">
+            <div class="checkout-header">
+                <h2>Finalizar Compra</h2>
+                <button class="close-checkout" id="close-checkout">×</button>
+            </div>
+            <div class="checkout-form">
+                <div class="form-group">
+                    <label for="customer-name">Nombre Completo</label>
+                    <input type="text" id="customer-name" placeholder="Ingresa tu nombre completo" required>
+                </div>
+                <div class="form-group">
+                    <label for="customer-phone">Número de Teléfono</label>
+                    <input type="tel" id="customer-phone" placeholder="Ingresa tu número de teléfono" required>
+                </div>
+                <div class="checkout-summary">
+                    <h3>Resumen de tu Pedido</h3>
+                    <div id="checkout-items">
+                        <!-- Los items se mostrarán aquí -->
+                    </div>
+                    <div class="summary-total" id="summary-total">
+                        Total: $0.00
+                    </div>
+                </div>
+                <button class="confirm-order" id="confirm-order">Confirmar Pedido</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mensaje de éxito -->
+    <div class="success-message" id="success-message">
+        <div class="success-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="success-text">
+            ¡Tu pedido ha sido enviado con éxito!
+        </div>
+        <button class="success-btn" id="success-btn">Continuar Comprando</button>
+    </div>
+    
+    <!-- Loader -->
+    <div class="loader" id="loader">
+        <div class="spinner"></div>
+    </div>
+    
+    <!-- Modal de Sabores -->
+    <div class="flavor-modal-overlay" id="flavor-modal-overlay">
+        <div class="flavor-modal">
+            <div class="flavor-modal-header">
+                <div class="flavor-modal-title" id="flavor-modal-title">Seleccionar Sabores</div>
+                <button class="close-flavor-modal" id="close-flavor-modal">×</button>
+            </div>
+            <div class="flavor-options" id="flavor-options">
+                <!-- Las opciones de sabores se cargarán aquí dinámicamente -->
+            </div>
+            <button class="add-flavors-to-cart" id="add-flavors-to-cart">Agregar al Carrito</button>
+        </div>
+    </div>
+    
+    <script>
+        // Variable para almacenar los productos cargados desde Google Sheets
+        let productos = [];
+        
+        // URL de la hoja publicada como CSV - Reemplaza con tu URL
+        const GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTSfNRclhMLcT7SyOOppUPbPQtSLnZTrGlHt-kTCdKUoGVgiUODTs4SQHpmcx_bKfvDc3RcsTu28JTP/pub?output=csv';
+        
+        // Carrito de compras
+        let carrito = [];
+        
+        // Elementos del DOM
+        const productosContainer = document.getElementById('products-container');
+        const cartIcon = document.getElementById('cart-icon');
+        const cartCount = document.getElementById('cart-count');
+        const cartOverlay = document.getElementById('cart-overlay');
+        const cartContainer = document.getElementById('cart-container');
+        const closeCart = document.getElementById('close-cart');
+        const cartItems = document.getElementById('cart-items');
+        const cartTotal = document.getElementById('cart-total');
+        const checkoutBtn = document.getElementById('checkout-btn');
+        const checkoutOverlay = document.getElementById('checkout-overlay');
+        const closeCheckout = document.getElementById('close-checkout');
+        const customerName = document.getElementById('customer-name');
+        const customerPhone = document.getElementById('customer-phone');
+        const checkoutItems = document.getElementById('checkout-items');
+        const summaryTotal = document.getElementById('summary-total');
+        const confirmOrder = document.getElementById('confirm-order');
+        const successMessage = document.getElementById('success-message');
+        const successBtn = document.getElementById('success-btn');
+        const loader = document.getElementById('loader');
+        const refreshBtn = document.getElementById('refresh-btn');
+        const flavorModalOverlay = document.getElementById('flavor-modal-overlay');
+        const closeFlavorModal = document.getElementById('close-flavor-modal');
+        const addFlavorsToCart = document.getElementById('add-flavors-to-cart');
+        
+        // Variable para almacenar el producto actualmente seleccionado
+        let productoActual = null;
+        
+        // Encriptar precio para protegerlo contra manipulaciones (implementación básica)
+        function protegerPrecio(precio, id) {
+            // Esta función aplica un "ofuscamiento" simple para dificultar la manipulación directa
+            // En un entorno de producción, se recomendaría validación en el servidor
+            const factor = (id % 10) + 1;
+            return {
+                v: precio,
+                h: btoa(String(precio * factor)) // Codificación básica
+            };
+        }
+        
+        // Verificar precio protegido
+        function verificarPrecio(precioProtegido, id) {
+            if (!precioProtegido || !precioProtegido.v || !precioProtegido.h) {
+                return false;
+            }
+            
+            const factor = (id % 10) + 1;
+            const hash = btoa(String(precioProtegido.v * factor));
+            return hash === precioProtegido.h;
+        }
+        
+        // Función para cargar los datos desde Google Sheets con mejor manejo de errores
+        async function cargarDatosDesdeGoogleSheets(silencioso = false) {
+            try {
+                // Mostrar loader solo si no es actualización silenciosa
+                if (!silencioso) {
+                    loader.style.display = 'flex';
+                }
+                
+                // Agregar un parámetro de tiempo para evitar el caché
+                const timestamp = new Date().getTime();
+                const url = `${GOOGLE_SHEETS_URL}&_t=${timestamp}`;
+                
+                console.log('Cargando datos desde:', url);
+                
+                // Fetch para obtener los datos CSV
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+                
+                const csvData = await response.text();
+                console.log('Datos CSV recibidos:', csvData.substring(0, 200) + '...');
+                
+                // Procesamiento mejorado del CSV
+                const lines = csvData.split('\n');
+                if (lines.length <= 1) {
+                    throw new Error('No se encontraron datos en el CSV');
+                }
+                
+                // Obtener encabezados y validar
+                const headers = lines[0].split(',').map(h => h.trim());
+                console.log('Encabezados detectados:', headers);
+                
+                // Verificar encabezados mínimos requeridos
+                const requiredHeaders = ['id', 'nombre', 'sabor', 'precio', 'disponible'];
+                const missingHeaders = requiredHeaders.filter(h => 
+                    !headers.some(header => header.toLowerCase() === h)
+                );
+                
+                if (missingHeaders.length > 0) {
+                    throw new Error(`Faltan encabezados requeridos: ${missingHeaders.join(', ')}`);
+                }
+                
+                // Inicializar el array de productos
+                const productosRaw = [];
+                
+                // Procesar cada línea del CSV (excepto la cabecera)
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue; // Saltar líneas vacías
+                    
+                    // Dividir la línea por comas, teniendo en cuenta las comillas
+                    const values = parseCsvLine(line);
+                    if (values.length !== headers.length) {
+                        console.warn(`Línea ${i+1} tiene ${values.length} valores pero se esperaban ${headers.length}. Saltando.`);
+                        continue;
+                    }
+                    
+                    const product = {};
+                    
+                    // Mapear los valores a propiedades del producto
+                    headers.forEach((header, index) => {
+                        const value = values[index] ? values[index].trim() : '';
+                        const headerLower = header.toLowerCase().trim();
+                        
+                        // Asignar valores según el encabezado
+                        switch(headerLower) {
+                            case 'id':
+                                product.id = parseInt(value) || i; // Usa el índice si no hay ID
+                                break;
+                            case 'nombre': product.nombre = value;
+                                break;
+                            case 'descripcion':
+                                product.descripcion = value;
+                                break;
+                            case 'sabor':
+                                product.sabor = value;
+                                break;
+                            case 'precio':
+                                // Limpiar y convertir el precio para asegurar formato correcto
+                                const precioLimpio = value.replace(/[^\d.,]/g, '').replace(',', '.');
+                                product.precio = parseFloat(precioLimpio) || 0;
+                                if (product.precio <= 0) {
+                                    console.warn(`Precio inválido (${value}) en línea ${i+1}. Usando 0.`);
+                                }
+                                break;
+                            case 'liquidacion':
+                                // Nueva columna para productos en liquidación
+                                product.liquidacion = value.toUpperCase() === 'Y' || value.toUpperCase() === 'YES' || value.toUpperCase() === 'SI';
+                                break;
+                            case 'disponible':
+                                product.disponible = value.toUpperCase() === 'Y' || value.toUpperCase() === 'YES' || value.toUpperCase() === 'SI';
+                                break;
+                            case 'link de foto':
+                            case 'foto':
+                            case 'imagen':
+                                product.imagen = value;
+                                break;
+                            default:
+                                // Para cualquier otro encabezado, almacenarlo como está
+                                product[headerLower] = value;
+                                break;
+                        }
+                    });
+                    
+                    
+                    // Solo agregar productos con datos mínimos
+                    if (product.nombre && (product.sabor || product.id)) {
+                        productosRaw.push(product);
+                    } else {
+                        console.warn(`Producto en línea ${i+1} no tiene nombre o identificador. Saltando.`);
+                    }
+                }
+                
+                console.log('Productos crudos cargados:', productosRaw.length);
+                
+                // Procesar los productos para agruparlos por nombre
+                const productosMap = new Map();
+                
+                productosRaw.forEach(producto => {
+                    // Extraer el nombre base (antes de cualquier guión o separador)
+                    const nombreBase = producto.nombre.split('-')[0].trim();
+                    
+                    if (!productosMap.has(nombreBase)) {
+                        // Si es un nuevo producto, inicializar con sus variaciones
+                        productosMap.set(nombreBase, {
+                            id: producto.id,
+                            nombre: nombreBase,
+                            descripcion: producto.descripcion || '',
+                            imagen: producto.imagen || '',
+                            tieneVariacionesEnLiquidacion: false,
+                            variaciones: []
+                        });
+                    }
+                    
+                    // Añadir esta variación con verificación de datos
+                    if (producto.sabor) {
+                        // Verificar si esta variación está en liquidación
+                        const enLiquidacion = producto.liquidacion || false;
+                        
+                        // Si alguna variación está en liquidación, marcar el producto completo
+                        if (enLiquidacion) {
+                            productosMap.get(nombreBase).tieneVariacionesEnLiquidacion = true;
+                        }
+                        
+                        productosMap.get(nombreBase).variaciones.push({
+                            nombre: producto.sabor || `Variación ${productosMap.get(nombreBase).variaciones.length + 1}`,
+                            precio: producto.precio || 0,
+                            precioProt: protegerPrecio(producto.precio || 0, producto.id || 1),
+                            disponible: producto.disponible,
+                            liquidacion: enLiquidacion // Almacenar si esta variación está en liquidación
+                        });
+                    }
+                });
+                
+                // Convertir el Map a un array de productos
+                productos = Array.from(productosMap.values());
+                console.log('Productos procesados:', productos.length);
+                if (productos.length > 0) {
+                    console.log('Primer producto:', productos[0]);
+                }
+                
+                // Verificar si hay productos con variaciones
+                const sinVariaciones = productos.filter(p => !p.variaciones || p.variaciones.length === 0);
+                if (sinVariaciones.length > 0) {
+                    console.warn(`${sinVariaciones.length} productos sin variaciones:`, sinVariaciones.map(p => p.nombre));
+                }
+                
+                // Cargar los productos en la interfaz
+                cargarProductos();
+                
+                // Ocultar loader
+                if (!silencioso) {
+                    loader.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error al cargar datos desde Google Sheets:', error);
+                
+                // Mostrar error solo si no es actualización silenciosa
+                if (!silencioso) {
+                    loader.style.display = 'none';
+                    productosContainer.innerHTML = `
+                        <div style="text-align: center; padding: 2rem;">
+                            <p>Error al cargar los productos: ${error.message}</p>
+                            <button id="reload-btn" style="padding: 0.75rem 1.5rem; margin-top: 1rem; background-color: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                Reintentar
+                            </button>
+                        </div>
+                    `;
+                    
+                    // Agregar evento para recargar
+                    document.getElementById('reload-btn').addEventListener('click', () => {
+                        cargarDatosDesdeGoogleSheets();
+                    });
+                }
+            }
+        }
+        
+        // Función auxiliar para parsear líneas CSV correctamente
+        function parseCsvLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            
+            result.push(current); // Añadir el último valor
+            return result;
+        }
+        
+        // Función modificada para cargar productos con etiqueta de liquidación
+        function cargarProductos() {
+            productosContainer.innerHTML = '';
+            
+            if (!productos || productos.length === 0) {
+                productosContainer.innerHTML = '<p style="text-align: center; padding: 2rem;">No hay productos disponibles en este momento.</p>';
+                return;
+            }
+            
+            console.log(`Cargando ${productos.length} productos en la interfaz`);
+            
+            productos.forEach((producto, productoIndex) => {
+                // Verificar si el producto tiene variaciones
+                if (!producto.variaciones || producto.variaciones.length === 0) {
+                    console.warn(`Producto ${producto.nombre} no tiene variaciones. Saltando.`);
+                    return;
+                }
+                
+                const productCard = document.createElement('div');
+                productCard.className = 'product-card';
+                
+                // Filtrar variaciones disponibles (solo las que tienen Y)
+                const variacionesDisponibles = producto.variaciones.filter(variacion => variacion.disponible);
+                const hayDisponibles = variacionesDisponibles.length > 0;
+                
+                // Procesar URL de imagen desde Google Photos
+                let imagenUrl = 'https://via.placeholder.com/300x300';
+                
+                if (producto.imagen && producto.imagen.trim() !== '') {
+                    // Si es una URL de Google Photos, asegurarse de que sea una URL directa a la imagen
+                    if (producto.imagen.includes('photos.google.com') || producto.imagen.includes('photos.app.goo.gl')) {
+                        if (!producto.imagen.includes('=w')) {
+                            imagenUrl = producto.imagen + '=w600-h600';
+                        } else {
+                            imagenUrl = producto.imagen;
+                        }
+                    } else {
+                        imagenUrl = producto.imagen;
+                    }
+                }
+                
+                // Crear el HTML base del producto
+                let productHTML = `
+                    <div class="product-image-container" data-product-index="${productoIndex}">
+                        <img src="${imagenUrl}" alt="${producto.nombre}" class="product-image">
+                        ${!hayDisponibles ? '<div class="product-unavailable">No Disponible</div>' : ''}
+                `;
+                
+                // Añadir etiqueta de "Super Sale!" si el producto tiene variaciones en liquidación
+                if (producto.tieneVariacionesEnLiquidacion) {
+                    productHTML += `<div class="sale-badge">¡Super Sale!</div>`;
+                }
+                
+                productHTML += `
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">${producto.nombre}</h3>
+                        <p class="product-description">${producto.descripcion || ''}</p>
+                    </div>
+                `;
+                
+                productCard.innerHTML = productHTML;
+                productosContainer.appendChild(productCard);
+                
+                // Si hay sabores disponibles, agregar evento de clic a la imagen
+                if (hayDisponibles) {
+                    const imageContainer = productCard.querySelector('.product-image-container');
+                    imageContainer.style.cursor = 'pointer';
+                    
+                    imageContainer.addEventListener('click', () => {
+                        // Abrir modal de selección de sabores
+                        abrirModalSabores(producto);
+                    });
+                }
+            });
+        }
+        
+        // Función para abrir el modal de selección de sabores con soporte para liquidación
+        function abrirModalSabores(producto) {
+            // Guardar referencia al producto actual
+            productoActual = producto;
+            
+            // Actualizar título del modal
+            document.getElementById('flavor-modal-title').textContent = `Sabores de ${producto.nombre}`;
+            
+            // Limpiar opciones anteriores
+            const flavorOptions = document.getElementById('flavor-options');
+            flavorOptions.innerHTML = '';
+            
+            // Agregar cada sabor como una opción con control de cantidad
+            producto.variaciones.forEach((variacion, index) => {
+                const flavorOption = document.createElement('div');
+                flavorOption.className = `flavor-option ${!variacion.disponible ? 'flavor-unavailable' : ''}`;
+                flavorOption.dataset.index = index;
+                
+                // Determinar cómo mostrar el precio según si está en liquidación o no
+                let precioHTML = '';
+                if (variacion.liquidacion) {
+                    // Para productos en liquidación: precio en rojo, negrita y con la leyenda "Super Sale!"
+                    precioHTML = `<div class="sale-price" style="font-weight: bold;">$${variacion.precio.toFixed(2)} <span style="background-color: var(--sale); color: white; padding: 2px 5px; border-radius: 3px; font-size: 0.8rem; margin-left: 5px;">¡Super Sale!</span></div>`;
+                } else {
+                    // Para productos normales: precio normal
+                    precioHTML = `<div class="flavor-price">$${variacion.precio.toFixed(2)}</div>`;
+                }
+                
+                flavorOption.innerHTML = `
+                    <div>
+                        <div class="flavor-name">${variacion.nombre}</div>
+                        ${precioHTML}
+                    </div>
+                    <div class="flavor-quantity">
+                        <button class="quantity-control decrease" ${!variacion.disponible ? 'disabled' : ''}>-</button>
+                        <input type="number" class="quantity-input" value="0" min="0" max="99" ${!variacion.disponible ? 'disabled' : ''}>
+                        <button class="quantity-control increase" ${!variacion.disponible ? 'disabled' : ''}>+</button>
+                    </div>
+                `;
+                
+                flavorOptions.appendChild(flavorOption);
+                
+                // Agregar eventos a los controles de cantidad
+                if (variacion.disponible) {
+                    const decreaseBtn = flavorOption.querySelector('.decrease');
+                    const increaseBtn = flavorOption.querySelector('.increase');
+                    const quantityInput = flavorOption.querySelector('.quantity-input');
+                    
+                    decreaseBtn.addEventListener('click', () => {
+                        let currentValue = parseInt(quantityInput.value);
+                        if (currentValue > 0) {
+                            quantityInput.value = currentValue - 1;
+                            actualizarBotonAgregarAlCarrito();
+                        }
+                    });
+                    
+                    increaseBtn.addEventListener('click', () => {
+                        let currentValue = parseInt(quantityInput.value);
+                        if (currentValue < 99) {
+                            quantityInput.value = currentValue + 1;
+                            actualizarBotonAgregarAlCarrito();
+                        }
+                    });
+                    
+                    quantityInput.addEventListener('change', () => {
+                        let currentValue = parseInt(quantityInput.value);
+                        if (isNaN(currentValue) || currentValue < 0) {
+                            quantityInput.value = 0;
+                        } else if (currentValue > 99) {
+                            quantityInput.value = 99;
+                        }
+                        actualizarBotonAgregarAlCarrito();
+                    });
+                }
+            });
+            
+            // Mostrar el modal
+            flavorModalOverlay.style.display = 'flex';
+            
+            // Actualizar estado del botón de agregar al carrito
+            actualizarBotonAgregarAlCarrito();
+        }
+        
+        
+        // Función para actualizar el estado del botón "Agregar al Carrito" en el modal
+        function actualizarBotonAgregarAlCarrito() {
+            const addFlavorsBtn = document.getElementById('add-flavors-to-cart');
+            const quantityInputs = document.querySelectorAll('#flavor-options .quantity-input');
+            
+            // Verificar si hay al menos un sabor con cantidad mayor a cero
+            let totalCantidad = 0;
+            quantityInputs.forEach(input => {
+                totalCantidad += parseInt(input.value) || 0;
+            });
+            
+            addFlavorsBtn.disabled = totalCantidad === 0;
+        }
+        
+        // Función para agregar los sabores seleccionados al carrito
+        function agregarSaboresAlCarrito() {
+            if (!productoActual) return;
+            
+            const flavorOptions = document.querySelectorAll('#flavor-options .flavor-option');
+            
+            // Verificar si hay al menos un sabor seleccionado
+            let haySeleccionados = false;
+            
+            flavorOptions.forEach(option => {
+                const index = parseInt(option.dataset.index);
+                const variacion = productoActual.variaciones[index];
+                const cantidad = parseInt(option.querySelector('.quantity-input').value) || 0;
+                
+                if (cantidad > 0 && variacion.disponible) {
+                    haySeleccionados = true;
+                    
+                    // Verificar integridad del precio
+                    if (!verificarIntegridadProducto(productoActual, variacion)) {
+                        alert('Error al procesar el producto. Por favor, intenta de nuevo más tarde.');
+                        return;
+                    }
+                    
+                    // Verificar si el producto ya está en el carrito con la misma variación
+                    const itemExistente = carrito.find(item => 
+                        item.id === productoActual.id && item.variacion.nombre === variacion.nombre
+                    );
+                    
+                    if (itemExistente) {
+                        itemExistente.cantidad += cantidad;
+                    } else {
+                        carrito.push({
+                            id: productoActual.id,
+                            nombre: productoActual.nombre,
+                            variacion: variacion,
+                            precio: variacion.precio,
+                            cantidad: cantidad,
+                            liquidacion: variacion.liquidacion || false // Agregar la propiedad de liquidación
+                        });
+                    }
+                }
+            });
+            
+            if (haySeleccionados) {
+                // Actualizar el carrito
+                actualizarCarrito();
+                
+                // Cerrar el modal
+                cerrarModalSabores();
+                
+                // Mostrar confirmación
+                const toast = document.createElement('div');
+                toast.style.position = 'fixed';
+                toast.style.bottom = '20px';
+                toast.style.right = '20px';
+                toast.style.backgroundColor = 'var(--primary)';
+                toast.style.color = 'white';
+                toast.style.padding = '1rem';
+                toast.style.borderRadius = '4px';
+                toast.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+                toast.style.zIndex = '9999';
+                toast.style.animation = 'fadeInOut 3s ease';
+                toast.textContent = `${productoActual.nombre} agregado al carrito`;
+                
+                document.body.appendChild(toast);
+                
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 3000);
+            } else {
+                alert('Por favor selecciona al menos un sabor para agregar al carrito.');
+            }
+        }
+        
+        // Función para cerrar el modal de sabores
+        function cerrarModalSabores() {
+            flavorModalOverlay.style.display = 'none';
+            productoActual = null;
+        }
+        
+        // Verificar integridad de los datos y prevenir manipulaciones
+        function verificarIntegridadProducto(producto, variacion) {
+            // Verificar que los precios sean números válidos y positivos
+            if (isNaN(variacion.precio) || variacion.precio <= 0) {
+                console.error('Error: Precio inválido detectado');
+                return false;
+            }
+            
+            // Verificar que el precio no haya sido manipulado
+            if (variacion.precioProt && !verificarPrecio(variacion.precioProt, producto.id)) {
+                console.error('Error: Posible manipulación del precio detectada');
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // Actualizar cantidad de un item del carrito
+        function actualizarCantidadItem(index, nuevaCantidad) {
+            // Validar que el índice sea válido
+            if (index < 0 || index >= carrito.length) {
+                console.error('Índice de carrito inválido');
+                return;
+            }
+            
+            // Validar que la cantidad sea un número positivo
+            if (isNaN(nuevaCantidad) || nuevaCantidad <= 0) {
+                console.error('Cantidad inválida');
+                return;
+            }
+            
+            // Limitar a un máximo razonable (por ejemplo, 99 unidades)
+            if (nuevaCantidad > 99) {
+                nuevaCantidad = 99;
+            }
+            
+            // Guardar el precio original antes de actualizar
+            const precioOriginal = carrito[index].precio;
+            
+            // Actualizar la cantidad
+            carrito[index].cantidad = nuevaCantidad;
+            
+            // Verificar que el precio no haya sido manipulado
+            if (Math.abs(carrito[index].precio - precioOriginal) > 0.01) {
+                console.error('Posible manipulación de precio detectada');
+                carrito[index].precio = precioOriginal;
+            }
+            
+            // Actualizar la visualización del carrito
+            actualizarCarrito();
+        }
+        
+        // Eliminar item del carrito
+        function eliminarDelCarrito(index) {
+            // Validar que el índice sea válido
+            if (index < 0 || index >= carrito.length) {
+                console.error('Índice de carrito inválido');
+                return;
+            }
+            
+            // Eliminar el item del array
+            carrito.splice(index, 1);
+            
+            // Actualizar la visualización del carrito
+            actualizarCarrito();
+            
+            // Mostrar mensaje de confirmación
+            const toast = document.createElement('div');
+            toast.style.position = 'fixed';
+            toast.style.bottom = '20px';
+            toast.style.right = '20px';
+            toast.style.backgroundColor = '#dc3545';
+            toast.style.color = 'white';
+            toast.style.padding = '0.75rem 1rem';
+            toast.style.borderRadius = '4px';
+            toast.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+            toast.style.zIndex = '9999';
+            toast.style.animation = 'fadeInOut 3s ease';
+            toast.innerHTML = `<i class="fas fa-check-circle"></i> Producto eliminado del carrito`;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 3000);
+        }
+        
+                // Actualizar carrito con soporte para productos en liquidación
+                function actualizarCarrito() {
+            // Actualizar contador
+            const totalItems = carrito.reduce((total, item) => total + item.cantidad, 0);
+            cartCount.textContent = totalItems;
+            
+            // Actualizar contenido del carrito
+            if (carrito.length === 0) {
+                cartItems.innerHTML = '<div class="empty-cart-message">Tu carrito está vacío</div>';
+                checkoutBtn.disabled = true;
+            } else {
+                cartItems.innerHTML = '';
+                carrito.forEach((item, index) => {
+                    const cartItem = document.createElement('div');
+                    cartItem.className = 'cart-item';
+                    
+                    // Determinar cómo mostrar el precio según si está en liquidación o no
+                    let precioHTML = '';
+                    if (item.liquidacion) {
+                        // Para productos en liquidación: precio en rojo, negrita y con la leyenda "Super Sale!"
+                        precioHTML = `<div class="sale-price" style="font-weight: bold;">$${(item.precio * item.cantidad).toFixed(2)} <span style="background-color: var(--sale); color: white; padding: 2px 5px; border-radius: 3px; font-size: 0.8rem; margin-left: 5px;">¡Super Sale!</span></div>`;
+                    } else {
+                        // Para productos normales: precio normal
+                        precioHTML = `<div class="cart-item-price">$${(item.precio * item.cantidad).toFixed(2)}</div>`;
+                    }
+                    
+                    cartItem.innerHTML = `
+                        <div class="cart-item-info">
+                            <div class="cart-item-name">${item.nombre}</div>
+                            <div class="cart-item-flavor">Sabor: ${item.variacion.nombre}</div>
+                            ${precioHTML}
+                        </div>
+                        <div class="cart-item-quantity">
+                            <button class="quantity-btn decrease" data-index="${index}">-</button>
+                            <span class="quantity-value">${item.cantidad}</span>
+                            <button class="quantity-btn increase" data-index="${index}">+</button>
+                        </div>
+                        <button class="remove-item" data-index="${index}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    `;
+                    
+                    cartItems.appendChild(cartItem);
+                    
+                    // Agregar event listeners a los botones
+                    const decreaseBtn = cartItem.querySelector('.decrease');
+                    const increaseBtn = cartItem.querySelector('.increase');
+                    const removeBtn = cartItem.querySelector('.remove-item');
+                    
+                    if (decreaseBtn) {
+                        decreaseBtn.addEventListener('click', () => {
+                            if (item.cantidad > 1) {
+                                actualizarCantidadItem(index, item.cantidad - 1);
+                            } else {
+                                eliminarDelCarrito(index);
+                            }
+                        });
+                    }
+                    
+                    if (increaseBtn) {
+                        increaseBtn.addEventListener('click', () => {
+                            actualizarCantidadItem(index, item.cantidad + 1);
+                        });
+                    }
+                    
+                    if (removeBtn) {
+                        removeBtn.addEventListener('click', () => {
+                            eliminarDelCarrito(index);
+                        });
+                    }
+                });
+                
+                checkoutBtn.disabled = false;
+            }
+            
+            // Actualizar total
+            const total = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+            cartTotal.textContent = `Total: $${total.toFixed(2)}`;
+        }
+        
+        // Actualizar resumen de checkout con soporte para liquidación
+                function actualizarResumenCheckout() {
+            checkoutItems.innerHTML = '';
+            
+            carrito.forEach(item => {
+                const summaryItem = document.createElement('div');
+                summaryItem.className = 'summary-item';
+                
+                // Determinar cómo mostrar el precio según si está en liquidación o no
+                let precioHTML = '';
+                if (item.liquidacion) {
+                    // Para productos en liquidación: precio en rojo, negrita y con la leyenda "Super Sale!"
+                    precioHTML = `<div style="color: var(--sale); font-weight: bold;">$${(item.precio * item.cantidad).toFixed(2)} <span style="background-color: var(--sale); color: white; padding: 2px 5px; border-radius: 3px; font-size: 0.8rem; margin-left: 5px;">¡Super Sale!</span></div>`;
+                } else {
+                    // Para productos normales: precio normal
+                    precioHTML = `<div>$${(item.precio * item.cantidad).toFixed(2)}</div>`;
+                }
+                
+                summaryItem.innerHTML = `
+                    <div>${item.nombre} (Sabor: ${item.variacion.nombre}) x${item.cantidad}</div>
+                    ${precioHTML}
+                `;
+                checkoutItems.appendChild(summaryItem);
+            });
+            
+            const total = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+            summaryTotal.textContent = `Total: $${total.toFixed(2)}`;
+        }
+        
+        // Abrir carrito
+        cartIcon.addEventListener('click', () => {
+            cartOverlay.style.display = 'flex';
+            setTimeout(() => {
+                cartContainer.style.transform = 'translateX(0)';
+            }, 10);
+        });
+        
+        // Cerrar carrito
+        closeCart.addEventListener('click', () => {
+            cartContainer.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                cartOverlay.style.display = 'none';
+            }, 300);
+        });
+        
+        // Cerrar carrito al hacer click fuera
+        cartOverlay.addEventListener('click', (e) => {
+            if (e.target === cartOverlay) {
+                cartContainer.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    cartOverlay.style.display = 'none';
+                }, 300);
+            }
+        });
+        
+        // Ir a checkout
+        checkoutBtn.addEventListener('click', () => {
+            actualizarResumenCheckout();
+            
+            // Cerrar carrito
+            cartContainer.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                cartOverlay.style.display = 'none';
+                // Abrir checkout
+                checkoutOverlay.style.display = 'flex';
+            }, 300);
+        });
+        
+        // Cerrar checkout
+        closeCheckout.addEventListener('click', () => {
+            checkoutOverlay.style.display = 'none';
+        });
+        
+        // Cerrar checkout al hacer click fuera
+        checkoutOverlay.addEventListener('click', (e) => {
+            if (e.target === checkoutOverlay) {
+                checkoutOverlay.style.display = 'none';
+            }
+        });
+        // Función para verificar y advertir sobre los bloqueadores de ventanas emergentes
+    function verificarVentanasEmergentes(whatsappUrl) {
+        // Crear un elemento para el mensaje de advertencia
+        const popupAlert = document.createElement('div');
+        popupAlert.style.position = 'fixed';
+        popupAlert.style.top = '50%';
+        popupAlert.style.left = '50%';
+        popupAlert.style.transform = 'translate(-50%, -50%)';
+        popupAlert.style.backgroundColor = 'white';
+        popupAlert.style.padding = '2rem';
+        popupAlert.style.borderRadius = '8px';
+        popupAlert.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+        popupAlert.style.zIndex = '2100';
+        popupAlert.style.maxWidth = '90%';
+        popupAlert.style.width = '450px';
+        popupAlert.style.textAlign = 'center';
+        
+        popupAlert.innerHTML = `
+            <div style="font-size: 3rem; color: #3a6ea5; margin-bottom: 1rem;">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <h3 style="margin-bottom: 1rem; color: #343a40;">Ventana Emergente Bloqueada</h3>
+            <p style="margin-bottom: 1.5rem; color: #666;">
+                Es posible que tu navegador haya bloqueado la ventana de WhatsApp. 
+                Por favor, permite las ventanas emergentes para este sitio y luego haz clic en el botón de abajo, o copia el enlace y pegalo en la barra de direcciones para continuar con tu compra.
+            </p>
+            <div style="display: flex; justify-content: space-between; gap: 1rem;">
+                <button id="popup-retry" style="flex: 1; padding: 0.75rem; background-color: #3a6ea5; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Intentar de Nuevo
+                </button>
+                <button id="popup-copy" style="flex: 1; padding: 0.75rem; background-color: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Copiar Enlace
+                </button>
+                <button id="popup-close" style="flex: 1; padding: 0.75rem; background-color: #f8f9fa; color: #343a40; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">
+                    Cancelar
+                </button>
+            </div>
+        `;
+        
+        document.body.appendChild(popupAlert);
+        
+        // Evento para el botón de reintento
+        document.getElementById('popup-retry').addEventListener('click', () => {
+            document.body.removeChild(popupAlert);
+            // Intentamos abrir la ventana de nuevo
+            const nuevaVentana = window.open(whatsappUrl, '_blank');
+            if (!nuevaVentana || nuevaVentana.closed || typeof nuevaVentana.closed === 'undefined') {
+                // Si todavía está bloqueada, mostramos el mensaje de nuevo
+                verificarVentanasEmergentes(whatsappUrl);
+            }
+        });
+        
+        // Evento para el botón de copiar enlace
+        document.getElementById('popup-copy').addEventListener('click', () => {
+            navigator.clipboard.writeText(whatsappUrl).then(() => {
+                // Cambiamos el texto del botón para dar feedback
+                const copyBtn = document.getElementById('popup-copy');
+                copyBtn.textContent = '¡Enlace Copiado!';
+                copyBtn.style.backgroundColor = '#28a745';
+                
+                // Restauramos después de un tiempo
+                setTimeout(() => {
+                    copyBtn.textContent = 'Copiar Enlace';
+                    copyBtn.style.backgroundColor = '#6c757d';
+                }, 2000);
+            }).catch(err => {
+                console.error('Error al copiar: ', err);
+                alert('No se pudo copiar el enlace. Por favor, inténtalo manualmente.');
+            });
+        });
+        
+        // Evento para el botón de cerrar
+        document.getElementById('popup-close').addEventListener('click', () => {
+            document.body.removeChild(popupAlert);
+        });
+    }
+        // Confirmar pedido
+    confirmOrder.addEventListener('click', () => {
+    const nombre = customerName.value.trim();
+    const telefono = customerPhone.value.trim();
+    
+    if (!nombre) {
+        alert('Por favor ingresa tu nombre');
+        return;
+    }
+    
+    if (!telefono) {
+        alert('Por favor ingresa tu número de teléfono');
+        return;
+    }
+    
+    // Verificar integridad de los precios en el carrito
+    const preciosValidos = carrito.every(item => {
+        return item.precio > 0 && !isNaN(item.precio);
+    });
+    
+    if (!preciosValidos) {
+        alert('Error en los precios del carrito. Por favor, recarga la página e intenta de nuevo.');
+        return;
+    }
+    
+    // Validar que el total sea correcto (comprobación adicional)
+    const totalCalculado = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+    const totalMostrado = parseFloat(summaryTotal.textContent.replace('Total: $', ''));
+    
+    if (Math.abs(totalCalculado - totalMostrado) > 0.01) { // Permitir pequeñas diferencias por redondeo
+        alert('Error en el cálculo del total. Por favor, recarga la página e intenta de nuevo.');
+        return;
+    }
+    
+    // Mostrar loader
+    loader.style.display = 'flex';
+    
+    // Preparar mensaje de WhatsApp con formato mejorado y simplificado
+    let mensaje = `*Nuevo Pedido*%0A%0A`;
+    mensaje += `*Cliente:* ${nombre}%0A`;
+    mensaje += `*Teléfono:* ${telefono}%0A%0A`;
+    mensaje += `*Productos:*%0A`;
+    
+    // Agrupar productos por nombre
+    const productosAgrupados = {};
+    carrito.forEach(item => {
+        if (!productosAgrupados[item.nombre]) {
+            productosAgrupados[item.nombre] = [];
+        }
+        productosAgrupados[item.nombre].push(item);
+    });
+    
+    // Variable para contar el total de piezas
+    let totalPiezas = 0;
+    
+    // Generar mensaje agrupado sin precios, solo cantidades
+    Object.keys(productosAgrupados).forEach(nombreProducto => {
+        // Añadir nombre del producto
+        mensaje += `*${nombreProducto}*%0A`;
+        
+        // Calcular total de piezas por producto
+        let piezasProducto = 0;
+        
+        // Añadir cada sabor
+        productosAgrupados[nombreProducto].forEach(item => {
+            // Marcar si está en liquidación
+            const liquidacionMark = item.liquidacion ? " (LIQUIDACIÓN)" : "";
+            mensaje += `   - ${item.variacion.nombre}${liquidacionMark} x${item.cantidad}%0A`;
+            piezasProducto += item.cantidad;
+            totalPiezas += item.cantidad;
+        });
+        
+        // Añadir total de piezas del producto
+        mensaje += `%0A   *Total piezas ${nombreProducto}: ${piezasProducto}*%0A%0A`;
+    });
+    
+    // Añadir total de piezas general
+    mensaje += `*Total piezas pedido:* ${totalPiezas}%0A%0A`;
+    
+    // Añadir sección para copiar y pegar
+    mensaje += `*Resumen para inventario:*%0A`;
+    mensaje += `Producto%09Total piezas%0A`; // %09 es el código para tabulación
+    
+    // Añadir cada producto con su total de piezas separado por tabulador
+    Object.keys(productosAgrupados).forEach(nombreProducto => {
+        let piezasProducto = 0;
+        productosAgrupados[nombreProducto].forEach(item => {
+            piezasProducto += item.cantidad;
+        });
+        mensaje += `${nombreProducto}%09${piezasProducto}%0A`;
+    });
+    
+    // Número de WhatsApp del vendedor (reemplazar con el número real)
+    const numeroWhatsapp = '+526391239619'; // Reemplaza con tu número real
+    
+    // Crear URL de WhatsApp
+    const whatsappUrl = `https://wa.me/${numeroWhatsapp}?text=${mensaje}`;
+    
+    // Ocultar loader y checkout después de un breve retardo
+    setTimeout(() => {
+        // Ocultar loader y checkout
+        loader.style.display = 'none';
+        checkoutOverlay.style.display = 'none';
+        
+        // Intentar abrir WhatsApp en nueva pestaña
+        const ventanaWhatsApp = window.open(whatsappUrl, '_blank');
+        
+        // Verificar si la ventana se abrió correctamente
+        if (!ventanaWhatsApp || ventanaWhatsApp.closed || typeof ventanaWhatsApp.closed === 'undefined') {
+            // Si la ventana fue bloqueada, mostrar el mensaje
+            verificarVentanasEmergentes(whatsappUrl);
+        } else {
+            // Si se abrió correctamente, mostrar mensaje de éxito
+            successMessage.style.display = 'block';
+            
+            // Vaciar carrito
+            carrito = [];
+            actualizarCarrito();
+        }
+    }, 1500);
+});
+
+        
+        // Continuar comprando después de éxito
+        successBtn.addEventListener('click', () => {
+            successMessage.style.display = 'none';
+        });
+        
+        // Botón de actualización manual
+        refreshBtn.addEventListener('click', function() {
+            // Añadir clase de rotación al icono durante la carga
+            this.querySelector('svg').style.animation = 'spin 1s linear infinite';
+            
+            // Recargar los datos
+            cargarDatosDesdeGoogleSheets().then(() => {
+                // Detener la animación cuando termine
+                setTimeout(() => {
+                    this.querySelector('svg').style.animation = '';
+                }, 500);
+            });
+        });
+        
+        // Evento para cerrar el modal de sabores con el botón X
+        closeFlavorModal.addEventListener('click', cerrarModalSabores);
+        
+        // Evento para cerrar el modal de sabores al hacer clic fuera
+        flavorModalOverlay.addEventListener('click', (e) => {
+            if (e.target === flavorModalOverlay) {
+                cerrarModalSabores();
+            }
+        });
+        
+        // Evento para agregar sabores al carrito
+        addFlavorsToCart.addEventListener('click', agregarSaboresAlCarrito);
+        
+        // Configuración de actualización automática
+        const TIEMPO_ACTUALIZACION = 5 * 60 * 1000; // 5 minutos en milisegundos
+        
+        // Función para actualización periódica
+        function iniciarActualizacionAutomatica() {
+            // Primera carga de datos
+            cargarDatosDesdeGoogleSheets();
+            
+            // Configurar actualización periódica
+            setInterval(() => {
+                console.log('Actualizando datos desde Google Sheets...');
+                cargarDatosDesdeGoogleSheets(true);
+            }, TIEMPO_ACTUALIZACION);
+        }
+        
+        // Inicializar con protección básica contra manipulación
+        window.addEventListener('DOMContentLoaded', () => {
+            // Deshabilitar ciertas funciones de consola para dificultar manipulaciones
+            // Nota: Esto no es una protección completa, solo una capa básica
+            const consoleWarning = () => {
+                console.clear();
+                console.log('%c⚠️ Advertencia:', 'color: red; font-size: 20px; font-weight: bold;');
+                console.log('%cEsta función está deshabilitada por motivos de seguridad.', 'font-size: 16px;');
+                return false;
+            };
+            
+            // Solo aplicar en producción, no en desarrollo
+            if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+                // Protección básica contra manipulaciones
+                const originalLog = console.log;
+                console.log = function() {
+                    if (arguments[0] && typeof arguments[0] === 'string' && 
+                        (arguments[0].includes('precio') || arguments[0].includes('price'))) {
+                        return consoleWarning();
+                    }
+                    return originalLog.apply(console, arguments);
+                };
+            }
+            
+            // Agregar animación de fadeInOut para toast
+            const style = document.createElement('style');
+            style.textContent = `@keyframes fadeInOut {
+                    0% { opacity: 0; transform: translateY(20px); }
+                    10% { opacity: 1; transform: translateY(0); }
+                    90% { opacity: 1; transform: translateY(0); }
+                    100% { opacity: 0; transform: translateY(20px); }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // Iniciar actualización automática
+            iniciarActualizacionAutomatica();
+            
+            actualizarCarrito();
+        });
+    </script>
+    
+    <!-- Botón flotante para descargar catálogo -->
+<button class="catalog-download-btn" id="catalogBtn" onclick="downloadCatalog()">
+    <svg viewBox="0 0 24 24">
+        <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+    </svg>
+    Descarga nuestro catálogo completo
+</button>
+
+<!-- Contenedor para notificaciones -->
+<div id="notification" class="notification"></div>
+<script>
+// Función para mostrar notificaciones
+function showNotification(message, isError = false) {
+    const notification = document.getElementById('notification');
+    notification.textContent = message;
+    notification.className = `notification ${isError ? 'error' : ''} show`;
+    
+    setTimeout(() => {
+        notification.classList.remove('show');
+    }, 3000);
+}
+
+// Función para convertir CSV a formato de array
+function parseCSV(csvText) {
+    const lines = csvText.split('\n');
+    const headers = lines[0].split('\t').map(h => h.trim());
+    const data = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+        if (lines[i].trim()) {
+            const values = lines[i].split('\t');
+            const row = {};
+            headers.forEach((header, index) => {
+                row[header] = values[index] ? values[index].trim() : '';
+            });
+            data.push(row);
+        }
+    }
+    
+    return data;
+}
+
+// Función para mostrar notificaciones
+function showNotification(message, isError = false) {
+    const notification = document.getElementById('notification');
+    notification.textContent = message;
+    notification.className = `notification ${isError ? 'error' : ''} show`;
+    
+    setTimeout(() => {
+        notification.classList.remove('show');
+    }, 3000);
+}
+
+// Función para convertir CSV a formato de array (CORREGIDA)
+function parseCSV(csvText) {
+    const lines = csvText.split('\n');
+    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, '')); // Usar comas y quitar comillas
+    const data = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+        if (lines[i].trim()) {
+            const values = lines[i].split(',').map(v => v.trim().replace(/"/g, '')); // Usar comas y quitar comillas
+            const row = {};
+            headers.forEach((header, index) => {
+                row[header] = values[index] ? values[index] : '';
+            });
+            data.push(row);
+        }
+    }
+    
+    return data;
+}
+
+// Función principal para descargar el catálogo
+async function downloadCatalog() {
+    const btn = document.getElementById('catalogBtn');
+    
+    try {
+        // Mostrar estado de carga
+        btn.classList.add('loading');
+        
+        // URL del Google Sheet en formato CSV
+        const sheetUrl = 'https://docs.google.com/spreadsheets/d/1IQMowlxeCundG46nFYxNpeZqiblmbGYhWBrAfHd6m-s/export?format=csv&gid=0';
+        
+        // Obtener datos del Google Sheet
+        const response = await fetch(sheetUrl);
+        if (!response.ok) {
+            throw new Error('Error al obtener los datos del Google Sheet');
+        }
+        
+        const csvData = await response.text();
+        
+        // Parsear los datos CSV
+        const allProducts = parseCSV(csvData);
+        
+        // Filtrar solo productos disponibles (CORREGIDO - solo buscar "Y" o "y")
+        const availableProducts = allProducts.filter(product => {
+            const disponible = product['Disponible'];
+            return disponible && (disponible === 'Y' || disponible === 'y');
+        });
+        
+        if (availableProducts.length === 0) {
+            throw new Error('No se encontraron productos disponibles');
+        }
+        
+        // Crear datos para el Excel con solo las columnas requeridas
+        const excelData = availableProducts.map(product => ({
+            'Nombre': product['Nombre'] || '',
+            'Descripción': product['Descripcion'] || '',
+            'Sabor': product['Sabor'] || ''
+        }));
+        
+        // Crear workbook de Excel
+        const worksheet = XLSX.utils.json_to_sheet(excelData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Productos Disponibles');
+
+        const headerCells = ['A1', 'B1', 'C1']; // Celdas de los encabezados
+headerCells.forEach(cell => {
+    if (worksheet[cell]) {
+        worksheet[cell].s = {
+            font: { bold: true }
+        };
+    }
+});
+        
+        // Ajustar ancho de columnas
+        const maxWidths = [
+            Math.max(...excelData.map(row => row['Nombre'].length)),
+            Math.max(...excelData.map(row => row['Descripción'].length)),
+            Math.max(...excelData.map(row => row['Sabor'].length))
+        ];
+        
+        worksheet['!cols'] = [
+            { width: Math.min(maxWidths[0] + 5, 50) },
+            { width: Math.min(maxWidths[1] + 5, 80) },
+            { width: Math.min(maxWidths[2] + 5, 30) }
+        ];
+        
+        // Generar fecha actual para el nombre del archivo
+        const today = new Date();
+        const dateString = today.toLocaleDateString('es-ES').replace(/\//g, '-');
+        const fileName = `Catalogo_MarketVape_${dateString}.xlsx`;
+        
+        // Descargar el archivo
+        XLSX.writeFile(workbook, fileName);
+        
+        // Mostrar notificación de éxito
+        showNotification(`✅ Catálogo descargado exitosamente: ${availableProducts.length} productos disponibles`);
+        
+    } catch (error) {
+        console.error('Error al descargar el catálogo:', error);
+        showNotification(`❌ Error al descargar el catálogo: ${error.message}`, true);
+    } finally {
+        // Remover estado de carga
+        btn.classList.remove('loading');
+    }
+
+}
+</script>
+</body>
+</html>
