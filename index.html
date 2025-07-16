@@ -812,6 +812,10 @@
                     <label for="customer-phone">Número de Teléfono</label>
                     <input type="tel" id="customer-phone" placeholder="Ingresa tu número de teléfono" required>
                 </div>
+                <div class="form-group">
+                    <label for="City">Ciudad de Entrega:</label>
+                    <input type="text" id="customer-city" placeholder="Ej: Chihuahua, Juárez, Delicias..." required>
+                </div>
                 <div class="checkout-summary">
                     <h3>Resumen de tu Pedido</h3>
                     <div id="checkout-items">
@@ -880,6 +884,7 @@
         const closeCheckout = document.getElementById('close-checkout');
         const customerName = document.getElementById('customer-name');
         const customerPhone = document.getElementById('customer-phone');
+        const customerCity = document.getElementById('ciudad');
         const checkoutItems = document.getElementById('checkout-items');
         const summaryTotal = document.getElementById('summary-total');
         const confirmOrder = document.getElementById('confirm-order');
@@ -1719,6 +1724,7 @@
     confirmOrder.addEventListener('click', () => {
     const nombre = customerName.value.trim();
     const telefono = customerPhone.value.trim();
+    const city = customerCity.value.trim();
     
     if (!nombre) {
         alert('Por favor ingresa tu nombre');
@@ -1727,6 +1733,11 @@
     
     if (!telefono) {
         alert('Por favor ingresa tu número de teléfono');
+        return;
+    }
+
+    if (!city) {
+        alert('Por favor ingresa tu ciudad de entrega');
         return;
     }
     
@@ -1756,6 +1767,7 @@
     let mensaje = `*Nuevo Pedido*%0A%0A`;
     mensaje += `*Cliente:* ${nombre}%0A`;
     mensaje += `*Teléfono:* ${telefono}%0A%0A`;
+    mensaje += `*Entrega:* ${city}%0A%0A`;
     mensaje += `*Productos:*%0A`;
     
     // Agrupar productos por nombre
